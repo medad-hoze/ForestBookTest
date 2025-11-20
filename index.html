@@ -3926,20 +3926,33 @@ function toggleFilterDropdown(column, icon) {
     const actionsRow = document.createElement('div');
     actionsRow.className = 'filter-actions-row';
 
-    const allChecked = !columnFilters[column] || columnFilters[column].length === 0;
-    const noneChecked = columnFilters[column] && columnFilters[column].length === 0;
-
     actionsRow.innerHTML = `
-      <div class="filter-option all-option" data-value="all">
-        <input type="checkbox" ${allChecked ? 'checked' : ''} id="filter-all-${column}">
-        <label for="filter-all-${column}">בחר הכל</label>
+      <div class="filter-option all-option" data-action="select-all">
+        <label>בחר הכל</label>
       </div>
-      <div class="filter-option clear-all-option" data-value="none">
-        <input type="checkbox" ${noneChecked ? 'checked' : ''} id="filter-none-${column}">
-        <label for="filter-none-${column}">נקה הכל</label>
+      <div class="filter-option clear-all-option" data-action="clear-all">
+        <label>נקה הכל</label>
       </div>
     `;
     dropdown.appendChild(actionsRow);
+
+    // Add click handlers for Select All and Clear All
+    const selectAllBtn = actionsRow.querySelector('[data-action="select-all"]');
+    const clearAllBtn = actionsRow.querySelector('[data-action="clear-all"]');
+
+    selectAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
+      valueCheckboxes.forEach(cb => cb.checked = true);
+      handleFilterChange(column, dropdown);
+    });
+
+    clearAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
+      valueCheckboxes.forEach(cb => cb.checked = false);
+      handleFilterChange(column, dropdown);
+    });
 
     // Create options container
     const optionsContainer = document.createElement('div');
@@ -4013,19 +4026,7 @@ function toggleFilterDropdown(column, icon) {
 
 // Handle filter checkbox changes
 function handleFilterChange(column, dropdown) {
-  const allCheckbox = dropdown.querySelector('[data-value="all"] input[type="checkbox"]');
-  const noneCheckbox = dropdown.querySelector('[data-value="none"] input[type="checkbox"]');
   const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
-
-  // Handle "Select All" click
-  if (allCheckbox && allCheckbox.checked) {
-    valueCheckboxes.forEach(cb => cb.checked = true);
-  }
-
-  // Handle "Clear All" click
-  if (noneCheckbox && noneCheckbox.checked) {
-    valueCheckboxes.forEach(cb => cb.checked = false);
-  }
 
   const selectedValues = Array.from(valueCheckboxes)
     .filter(cb => cb.checked)
@@ -4039,16 +4040,7 @@ function handleFilterChange(column, dropdown) {
     columnFilters[column] = selectedValues;
   }
 
-  // Update Select All and Clear All checkbox states to reflect current selection
-  if (allCheckbox) {
-    allCheckbox.checked = (selectedValues.length === valueCheckboxes.length);
-  }
-  if (noneCheckbox) {
-    noneCheckbox.checked = (selectedValues.length === 0);
-  }
-
   updateFilterIcon(column);
-
   applyFiltersAndRender();
 }
 
