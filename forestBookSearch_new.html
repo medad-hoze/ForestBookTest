@@ -1,0 +1,4492 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ספר יער - מערכת ניהול יערות</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('LOGO.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.35;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.40);
+
+            direction: rtl;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .logo svg {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .logo img{
+            height:48px;
+            width:auto;
+            border-radius:8px;
+            box-shadow:0 2px 8px rgba(0,0,0,.08);
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        
+        .date-filters {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .date-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .date-group label {
+            font-size: 12px;
+            color: #e3e2e2;
+            font-weight: 500;
+        }
+        
+        .date-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .date-group select:hover {
+            border-color: #40916c;
+        }
+        
+        .date-group select:focus {
+            outline: none;
+            border-color: #40916c;
+            box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
+        }
+        
+        .event-types {
+            /* background: white; */
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .event-type-card {
+            min-width: 150px;
+            padding: 15px 20px;
+            background: #52b788;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .event-type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .event-type-card.active {
+            background: #2d6a4f;
+            transform: scale(1.05);
+        }
+        
+        .event-count {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .event-type-name {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .scroll-button {
+            background: #f0f0f0;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .scroll-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .content-wrapper {
+            direction: ltr;
+
+            display: flex;
+            height: calc(100vh - 270px);
+            position: relative;
+            gap: 0;
+        }
+        
+        .resize-divider {
+            width: 40px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+        
+        .resize-divider:hover {
+            background: #e0e0e0;
+        }
+        
+        .resize-button {
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 60px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .resize-button:hover {
+            background: #1f4d36;
+            transform: scaleY(1.1);
+        }
+
+        .resize-divider { width: 48px; }
+        .resize-stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .resize-button { width: 36px; height: 36px; border-radius: 8px; }
+
+        .map-section {
+            flex: 2;
+            position: relative;
+            transition: flex 0.5s ease;
+        }
+        
+        .map-section.expanded {
+            flex: 1;
+        }
+        
+        .map-section.collapsed {
+            flex: 0;
+            display: none;
+        }
+        
+        .map-container {
+            height: 99%;
+            position: relative;
+        }
+        
+        .table-section {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+            transition: flex 0.5s ease;
+            border-right: none; 
+            border-left: 1px solid #ddd;
+        }
+        
+        .table-section.expanded {
+            flex: 1;
+        }
+        
+        .table-section.collapsed {
+            flex: 0;
+            display: none;
+        }
+        
+        .legend-control {
+            position: absolute;
+            top: 125px;
+            left: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 999;
+            min-width: 250px;
+            overflow: hidden;
+        }
+        
+        .legend-header {
+            background: #2d6a4f;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .legend-toggle {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .legend-toggle.collapsed {
+            transform: rotate(180deg);
+        }
+        
+        .legend-content {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+        }
+        
+        .legend-content.collapsed {
+            max-height: 0;
+            padding: 0 15px;
+        }
+        
+        .layer-control {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .layer-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .layer-toggle label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .legend-section {
+            margin-bottom: 15px;
+        }
+        
+        .legend-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .legend-symbol {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .legend-symbol.forest {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            background: rgba(50, 150, 50, 0.3);
+            border: 2px solid rgba(0, 100, 0, 0.8);
+        }
+        
+        .legend-label {
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .info-panel {
+            direction: rtl;
+            padding: 20px;
+            height: 85%;
+            overflow-y: auto;
+        }
+        
+        .info-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1b4332;
+        }
+        
+        .summary-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #495057;
+            line-height: 1.6;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .info-table th {
+          /*  make the lines betwen the rows green */
+            
+            padding: 10px;
+            text-align: right;
+            font-weight: 600;
+            color: #495057;
+            background: #f8faf9;
+            border-bottom: 2px solid #0d723c;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .info-table td {
+            padding: 10px;
+            border-bottom: 1px solid #1ab641;
+        }
+        
+        .info-table tr:hover {
+            background: #f0f8f4;
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .clickable-row:hover {
+            background: #e8f5e9 !important;
+        }
+        
+        .highlight-number {
+            font-weight: bold;
+            color: #2d6a4f;
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .sortable-header:hover {
+            background: #e8f5e9 !important;
+        }
+        
+        .sortable-header.sorted-asc::after {
+            content: ' ▲';
+            font-size: 0.8em;
+        }
+
+        .sortable-header.sorted-desc::after {
+            content: ' ▼';
+            font-size: 0.8em;
+        }
+
+.filter-icon {
+            cursor: pointer;
+            margin-left: 5px;
+            padding: 2px 5px;
+            display: inline-block;
+            position: relative;
+            width: 12px;
+            height: 12px;
+            transition: all 0.2s;
+        }
+
+        /* Arrow body (shaft) */
+        .filter-icon::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 2px;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background-color: #666;
+            transition: background-color 0.2s;
+        }
+
+        /* Arrow head (triangle) */
+        .filter-icon::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 1px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #666;
+            transition: border-top-color 0.2s;
+        }
+
+        /* Upward arrow (when sorted ascending) */
+        .filter-icon.asc::before {
+            top: auto;
+            bottom: 2px;
+        }
+
+        .filter-icon.asc::after {
+            bottom: auto;
+            top: 1px;
+            border-top: none;
+            border-bottom: 5px solid #666;
+        }
+
+        .filter-icon:hover::before {
+            background-color: #2d6a4f;
+        }
+
+        .filter-icon:hover::after {
+            border-top-color: #2d6a4f;
+        }
+
+        .filter-icon.asc:hover::after {
+            border-bottom-color: #2d6a4f;
+        }
+
+        .filter-icon:hover {
+            background: rgba(45, 106, 79, 0.1);
+            border-radius: 3px;
+        }
+
+        .filter-icon.active::before {
+            background-color: #2d6a4f;
+        }
+
+        .filter-icon.active::after {
+            border-top-color: #2d6a4f;
+        }
+
+        .filter-icon.active.asc::after {
+            border-bottom-color: #2d6a4f;
+        }
+
+        .filter-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .filter-dropdown.show {
+            display: block;
+        }
+
+        .filter-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-option:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .filter-option.all-option {
+            font-weight: bold;
+            background: #f9f9f9;
+            border-bottom: 2px solid #2d6a4f;
+        }
+
+        .filter-clear-btn {
+            padding: 8px 12px;
+            background: #f44336;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            border-top: 2px solid #d32f2f;
+        }
+
+        .filter-clear-btn:hover {
+            background: #d32f2f;
+        }
+
+        .time-slider-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .time-slider-label {
+            font-weight: 600;
+            color: #2d6a4f;
+            min-width: 100px;
+        }
+        
+        .time-slider-dates {
+            font-size: 14px;
+            color: #666;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .esri-time-slider {
+            flex: 1;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            font-size: 18px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .loading::before {
+            content: '';
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f0f0f0;
+            border-top-color: #40916c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+.year-range {
+  margin-inline-start: 120px;   
+  padding-inline-start: 16px;    
+  border-inline-start: 1px solid #e6e6e6; 
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.year-range .date-group select {
+  min-width: 110px;
+}
+
+
+
+
+
+.network-search-group {
+    padding-inline-start: 16px;
+    border-inline-start: 1px solid #e6e6e6;
+    margin-inline-start: 16px;
+}
+
+.network-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.network-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%;
+    height: 85%;
+    max-width: 1200px;
+    max-height: 800px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 100px rgba(45, 106, 79, 0.1);
+    overflow: hidden;
+    animation: slideUp 0.4s ease;
+}
+
+.network-modal-header {
+    background: linear-gradient(135deg, #2d6a4f 0%, #40916c 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.network-modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.network-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 32px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.network-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+#networkGraph {
+    height: calc(100% - 140px);
+    width: 100%;
+    position: relative;
+    background: radial-gradient(circle at center, #fafffe 0%, #f0f8f4 100%);
+}
+
+.network-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.network-legend h4 {
+    margin: 0 0 10px 0;
+    color: #2d6a4f;
+    font-size: 14px;
+}
+
+.legend-items {
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #495057;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.from-node {
+    background: linear-gradient(135deg, #52b788, #74c69d);
+    box-shadow: 0 2px 4px rgba(82, 183, 136, 0.3);
+}
+
+.dot.to-node {
+    background: linear-gradient(135deg, #40916c, #52b788);
+    box-shadow: 0 2px 4px rgba(64, 145, 108, 0.3);
+}
+
+.dot.same-node {
+    background: linear-gradient(135deg, #95d5b2, #b7e4c7);
+    box-shadow: 0 2px 4px rgba(149, 213, 178, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, -40%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+.vis-network {
+    border: none !important;
+}
+
+.vis-tooltip {
+    position: absolute;
+    visibility: hidden;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    backdrop-filter: blur(10px);
+    max-width: 250px;
+    z-index: 2001;
+}
+
+#fhpSearchBtn:hover:not(:disabled) {
+    background: #1f4d36 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(45, 106, 79, 0.2);
+}
+
+#fhpSearchBtn:disabled {
+    background: #9e9e9e !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <svg viewBox="0 0 100 100">
+                <image href="LOGO_KKL.jpg" x="5" y="5" height="90" width="90" />
+            </svg>
+            <span class="title">ספר יער</span>
+        </div>
+
+
+        <div class="date-filters">
+            <div class="date-group">
+                <label>מרחב</label>
+                <select id="DistrictName">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+
+
+            <div class="date-group">
+                <label>אזור</label>
+                <select id="region">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+            <div class="date-group">
+                <label>גוש</label>
+                <select id="gush">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+            <div class="date-group">
+                <label>יער</label>
+                <select id="forest">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+            <div class="date-group">
+                <label>חלקה</label>
+                <select id="parcel">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+            <div class="date-group">
+                <label>עומד</label>
+                <select id="stand">
+                    <option value="">הכל</option>
+                </select>
+            </div>
+            <div class="year-range">
+  <div class="date-group">
+    <label>מ-שנה</label>
+    <select id="yearFrom">
+      <option value="">מההתחלה</option>
+    </select>
+  </div>
+  <div class="date-group">
+    <label>עד שנה</label>
+    <select id="yearTo">
+      <option value="">עד הסוף</option>
+    </select>
+  </div>
+  
+</div>
+
+        </div>
+<div class="network-search-group">
+    <div class="date-group">
+        <label>חיפוש רשת F_H_P</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="fhpSearch" placeholder="הכנס מספר F_H_P" 
+                   list="fhpSuggestions"
+                   style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; 
+                          background: white; font-size: 14px; min-width: 150px;">
+            <datalist id="fhpSuggestions"></datalist>
+            <button id="fhpSearchBtn" 
+                    style="padding: 8px 16px; background: #2d6a4f; color: white; 
+                           border: none; border-radius: 8px; cursor: pointer; 
+                           font-weight: 500; transition: all 0.3s ease;">
+                <span id="searchBtnText"> הפעל</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+    </div>
+
+    
+    
+    <div class="event-types">
+        <button class="scroll-button" onclick="scrollEvents(-1)">‹</button>
+        <div id="eventTypesContainer" style="display: flex; gap: 15px; overflow: hidden; scroll-behavior: smooth;">
+            <!-- Event type cards -->
+        </div>
+        <button class="scroll-button" onclick="scrollEvents(1)">›</button>
+    </div>
+    
+    <div class="content-wrapper">
+        <div class="map-section" id="mapSection">
+            <div id="mapView" class="map-container">
+                <div class="legend-control">
+                    <div class="legend-header" onclick="toggleLegend()">
+                        <span>מקרא ושכבות</span>
+                        <span class="legend-toggle" id="legendToggle">▼</span>
+                    </div>
+                    <div class="legend-content" id="legendContent">
+                        <div class="layer-control">
+
+                            <div class="layer-toggle">
+                                <input type="checkbox" id="forestCurrentLayerToggle" checked>
+                                <label for="forestCurrentLayerToggle">שכבת עומדים נוכחית</label>
+                            </div>
+                            
+                            <div class="layer-toggle">
+                                <input type="checkbox" id="forestLayerToggle" checked>
+                                <label for="forestLayerToggle">שכבת עומדים היסטורית</label>
+                            </div>
+
+                            <div class="layer-toggle">
+                                <input type="checkbox" id="eventsLayerToggle" checked>
+                                <label for="eventsLayerToggle">שכבת אירועים</label>
+                            </div>
+                            <div class="layer-toggle">
+                                <input type="checkbox" id="imagesLayerToggle" >
+                                <label for="imagesLayerToggle">שכבת תמונות</label>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="legend-section">
+                                <h4>סוגי כיסוי יער</h4>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(0, 77, 0, 0.4); border: 2px solid rgba(0, 51, 0, 0.8);"></div>
+                                    <span class="legend-label">מעורב עצי מחט</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(0, 102, 0, 0.4); border: 2px solid rgba(0, 77, 0, 0.8);"></div>
+                                    <span class="legend-label">אורן ברוטיה</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(0, 128, 0, 0.4); border: 2px solid rgba(0, 102, 0, 0.8);"></div>
+                                    <span class="legend-label">אורן ירושלים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(0, 153, 0, 0.4); border: 2px solid rgba(0, 128, 0, 0.8);"></div>
+                                    <span class="legend-label">אורן גלעין</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(46, 125, 50, 0.4); border: 2px solid rgba(27, 94, 32, 0.8);"></div>
+                                    <span class="legend-label">ברוש מצוי</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(34, 139, 34, 0.4); border: 2px solid rgba(0, 100, 0, 0.8);"></div>
+                                    <span class="legend-label">רחבי עלים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(144, 238, 144, 0.4); border: 2px solid rgba(0, 128, 0, 0.8);"></div>
+                                    <span class="legend-label">מעורב רחבי עלים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(60, 179, 113, 0.4); border: 2px solid rgba(46, 125, 50, 0.8);"></div>
+                                    <span class="legend-label">מעורב עצי מחט - רחבי עלים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(107, 142, 35, 0.4); border: 2px solid rgba(85, 107, 47, 0.8);"></div>
+                                    <span class="legend-label">אקליפטוס גומפוצפלה</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(143, 188, 143, 0.4); border: 2px solid rgba(107, 142, 107, 0.8);"></div>
+                                    <span class="legend-label">אקליפטוס המקור</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(128, 128, 0, 0.4); border: 2px solid rgba(107, 107, 0, 0.8);"></div>
+                                    <span class="legend-label">זיתים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(85, 107, 47, 0.4); border: 2px solid rgba(62, 77, 36, 0.8);"></div>
+                                    <span class="legend-label">חרובים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(255, 192, 203, 0.4); border: 2px solid rgba(219, 112, 147, 0.8);"></div>
+                                    <span class="legend-label">עצי פרי</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(154, 205, 50, 0.4); border: 2px solid rgba(107, 142, 35, 0.8);"></div>
+                                    <span class="legend-label">חורש עד אציל - אלון חולע</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(173, 255, 47, 0.4); border: 2px solid rgba(124, 179, 66, 0.8);"></div>
+                                    <span class="legend-label">עצי חורש ארץ ישראלי</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(189, 183, 107, 0.4); border: 2px solid rgba(139, 134, 78, 0.8);"></div>
+                                    <span class="legend-label">חורש טבעי דליל</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(188, 143, 143, 0.4); border: 2px solid rgba(139, 90, 90, 0.8);"></div>
+                                    <span class="legend-label">בני שיח עבותיים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: rgba(192, 192, 192, 0.3); border: 2px solid rgba(128, 128, 128, 0.8);"></div>
+                                    <span class="legend-label">אחר</span>
+                                </div>
+                            </div>
+                            <div class="legend-section">
+                                <h4>צפיפות אירועים</h4>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: #e8fcd4; width: 20px; height: 20px; border-radius: 50%;"></div>
+                                    <span class="legend-label">2 אירועים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: #b7f293; width: 26px; height: 26px; border-radius: 50%;"></div>
+                                    <span class="legend-label">10 אירועים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: #74cf75; width: 34px; height: 34px; border-radius: 50%;"></div>
+                                    <span class="legend-label">50 אירועים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: #39a96b; width: 44px; height: 44px; border-radius: 50%;"></div>
+                                    <span class="legend-label">200 אירועים</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-symbol" style="background: #1f7c4c; width: 54px; height: 54px; border-radius: 50%;"></div>
+                                    <span class="legend-label">1000+ אירועים</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+<div class="resize-divider">
+  <div class="resize-stack">
+    <button class="resize-button" title="Map full (>)" onclick="setLayout(1)">&gt;</button>
+    <button class="resize-button" title="Split (&lt;&gt;)" onclick="setLayout(0)">&lt;&gt;</button>
+    <button class="resize-button" title="Table full (&lt;)" onclick="setLayout(2)">&lt;</button>
+  </div>
+</div>
+        
+        <div class="table-section" id="tableSection">
+            <div id="infoPanel" class="info-panel">
+                <h3 id="infoPanelTitle">טיפולים ביער</h3>
+                <div id="summaryInfo" class="summary-info"></div>
+                <table class="info-table">
+                    <thead>
+                        <tr>   <th data-column="gush" class="sortable-header" title="לחץ פעמיים למיון">
+                                גוש
+                                <span class="filter-icon" data-column="gush" title="לחץ לסינון">▼</span>
+                            </th>
+                               <th data-column="forest" class="sortable-header" title="לחץ פעמיים למיון">
+                                יער
+                                <span class="filter-icon" data-column="forest" title="לחץ לסינון">▼</span>
+                            </th>
+                               <th data-column="parcel" class="sortable-header" title="לחץ פעמיים למיון">
+                                חלקה
+                                <span class="filter-icon" data-column="parcel" title="לחץ לסינון">▼</span>
+                            </th>
+                            <th data-column="stand" class="sortable-header" title="לחץ פעמיים למיון">
+                                עומד
+                                <span class="filter-icon" data-column="stand" title="לחץ לסינון">▼</span>
+                            </th>
+                            <th data-column="area" class="sortable-header" title="לחץ פעמיים למיון">
+                                שטח (דונם)
+                                <span class="filter-icon" data-column="area" title="לחץ לסינון">▼</span>
+                            </th>
+                            <th data-column="year" class="sortable-header" title="לחץ פעמיים למיון">
+                                תאריך
+                                <span class="filter-icon" data-column="year" title="לחץ לסינון">▼</span>
+                            </th>
+                            <th data-column="type" class="sortable-header" title="לחץ פעמיים למיון">
+                                אירוע
+                                <span class="filter-icon" data-column="type" title="לחץ לסינון">▼</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="infoTableBody">
+                        <!-- Table rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="time-slider-container">
+        <div class="time-slider-label">סינון לפי תאריך:</div>
+        <div id="timeSlider"></div>
+        <div class="time-slider-dates" id="timeSliderDates"></div>
+    </div>
+    
+    <div class="loading" id="loading">טוען נתונים...</div>
+    <div class="error-message" id="errorMessage"></div>
+
+
+
+    <script src="https://unpkg.com/vis-network@latest/dist/vis-network.min.js"></script>
+    <script src="https://js.arcgis.com/4.28/"></script>
+
+
+<div id="networkModal" class="network-modal" style="display: none;">
+    <div class="network-modal-content">
+        <div class="network-modal-header">
+            <h2>רשת קשרים סוג כיסוי- F_H_P: <span id="fhpValue"></span></h2>
+            <button class="network-close-btn" onclick="closeNetworkModal()">&times;</button>
+        </div>
+        <div id="networkGraph"></div>
+    </div>
+</div>
+
+
+<script>
+  
+
+
+let networkData1 = [];
+let networkData2 = [];
+let network = null;
+
+async function loadNetworkData() {
+    const promises = [
+        loadDataset('networkx_edges.json', 1),
+        loadDataset('networkx_edges2.json', 2)
+    ];
+    
+    await Promise.all(promises);
+    
+    const searchBtn = document.getElementById('fhpSearchBtn');
+    const searchInput = document.getElementById('fhpSearch');
+    
+    if (networkData1.length > 0 || networkData2.length > 0) {
+        searchBtn.disabled = false;
+        searchInput.disabled = false;
+        searchInput.placeholder = `הכנס מספר F_H_P`;
+    }
+}
+
+async function loadDataset(filename, datasetNumber) {
+    try {
+        const response = await fetch(filename);
+        if (!response.ok) {
+            throw new Error(`Failed to load ${filename}: HTTP ${response.status}`);
+        }
+        
+        const text = await response.text();
+        
+        if (!text || text.trim().length === 0) {
+            throw new Error(`${filename} is empty`);
+        }
+        
+        let data;
+        const trimmedText = text.trim();
+        
+        try {
+            data = JSON.parse(trimmedText);
+            if (!Array.isArray(data)) {
+                data = [data];
+            }
+        } catch (parseError) {
+            
+            if (trimmedText.startsWith('[') && trimmedText.endsWith(']')) {
+                
+                const innerContent = trimmedText.slice(1, -1);
+                
+                const objectMatches = innerContent.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+                
+                if (objectMatches) {
+                    data = [];
+                    objectMatches.forEach((objStr, index) => {
+                        try {
+                            const obj = JSON.parse(objStr);
+                            data.push(obj);
+                        } catch (objError) {
+                            console.debug(`Failed to parse object ${index + 1}: ${objStr.substring(0, 100)}...`);
+                        }
+                    });
+                    
+                    if (data.length > 0) {
+                        console.log(`Extracted ${data.length} valid objects from ${filename}`);
+                    }
+                }
+            }
+            
+            if (!data || data.length === 0) {
+                data = [];
+                const lines = text.split('\n');
+                let currentObject = '';
+                let braceCount = 0;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    for (let char of line) {
+                        if (char === '{') braceCount++;
+                        if (char === '}') braceCount--;
+                    }
+                    
+                    currentObject += line + '\n';
+                    
+                    if (braceCount === 0 && currentObject.includes('{')) {
+                        const trimmed = currentObject.trim();
+                        if (trimmed && trimmed !== '[' && trimmed !== ']') {
+                            const cleanObject = trimmed.endsWith(',') ? trimmed.slice(0, -1) : trimmed;
+                            if (cleanObject.startsWith('{') && cleanObject.endsWith('}')) {
+                                try {
+                                    const obj = JSON.parse(cleanObject);
+                                    data.push(obj);
+                                } catch (e) {
+                                    console.debug(`Failed to parse object ending at line ${i + 1}`);
+                                }
+                            }
+                        }
+                        currentObject = '';
+                    }
+                }
+                
+                if (data.length > 0) {
+                    console.log(`Extracted ${data.length} objects using line-by-line parsing`);
+                }
+            }
+            
+            if (!data || data.length === 0) {
+                const match = parseError.message.match(/position (\d+)/);
+                if (match) {
+                    const errorPos = parseInt(match[1]);
+
+                }
+                throw new Error(`Could not parse any valid data from ${filename}`);
+            }
+        }
+        
+        if (data && data.length > 0) {
+            const sample = data[0];
+            if (!sample.F_H_P) {
+                console.warn(`Warning: ${filename} may not have expected F_H_P field. Sample:`, sample);
+            } else {
+                console.log(`Sample record from ${filename}:`, {
+                    F_H_P: sample.F_H_P,
+                    year_from: sample.year_from,
+                    year_to: sample.year_to
+                });
+            }
+        }
+        
+        if (datasetNumber === 1) {
+            networkData1 = data || [];
+        } else {
+            networkData2 = data || [];
+        }
+        
+    } catch (error) {
+        if (datasetNumber === 1) {
+            networkData1 = [];
+        } else {
+            networkData2 = [];
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadNetworkData();
+    
+    const searchBtn = document.getElementById('fhpSearchBtn');
+    const searchInput = document.getElementById('fhpSearch');
+    
+    if (searchBtn) {
+        searchBtn.disabled = true;
+        searchInput.disabled = true;
+        
+        searchBtn.addEventListener('click', searchNetwork);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !searchInput.disabled) {
+                searchNetwork();
+            }
+        });
+    }
+});
+
+async function searchNetwork() {
+    const fhpValue = document.getElementById('fhpSearch').value.trim();
+    
+    if (!fhpValue) {
+        alert('אנא הכנס מספר F_H_P');
+        return;
+    }
+    
+    if ((!networkData1 || networkData1.length === 0) && (!networkData2 || networkData2.length === 0)) {
+        alert('נתוני הרשת עדיין נטענים. אנא נסה שוב.');
+        await loadNetworkData();
+        return;
+    }
+    
+    const filteredData1 = networkData1.filter(item => 
+        item.F_H_P && item.F_H_P.toString() === fhpValue
+    );
+    
+    const filteredData2 = networkData2.filter(item => 
+        item.F_H_P && item.F_H_P.toString() === fhpValue
+    );
+    
+    const combinedData = [
+        ...filteredData1.map(item => ({...item, _network: 1})),
+        ...filteredData2.map(item => ({...item, _network: 2}))
+    ];
+    
+    if (combinedData.length === 0) {
+        const similarValues1 = [...new Set(networkData1
+            .filter(item => item.F_H_P && item.F_H_P.toString().includes(fhpValue))
+            .map(item => item.F_H_P))]
+            .slice(0, 3);
+            
+        const similarValues2 = [...new Set(networkData2
+            .filter(item => item.F_H_P && item.F_H_P.toString().includes(fhpValue))
+            .map(item => item.F_H_P))]
+            .slice(0, 3);
+            
+        const allSimilar = [...new Set([...similarValues1, ...similarValues2])].slice(0, 5);
+        
+        if (allSimilar.length > 0) {
+            alert(`לא נמצאו נתונים עבור F_H_P: ${fhpValue}\n\nערכים דומים:\n${allSimilar.join('\n')}`);
+        } else {
+            alert(`לא נמצאו נתונים עבור F_H_P: ${fhpValue}`);
+        }
+        return;
+    }
+    
+    showNetworkModal(fhpValue, combinedData);
+}
+
+function showNetworkModal(fhpValue, data) {
+    const modal = document.getElementById('networkModal');
+    document.getElementById('fhpValue').textContent = fhpValue;
+    modal.style.display = 'block';
+    
+    setTimeout(() => {
+        createNetworkVisualization(data);
+    }, 100);
+}
+
+function closeNetworkModal() {
+    const modal = document.getElementById('networkModal');
+    modal.style.display = 'none';
+    
+    if (network) {
+        network.destroy();
+        network = null;
+    }
+}
+
+function createNetworkVisualization(data) {
+    const container = document.getElementById('networkGraph');
+
+    let areas = [];
+    data.forEach(it => {
+        if (isFinite(+it.NET_AREA_from)) areas.push(+it.NET_AREA_from);
+        if (isFinite(+it.NET_AREA_to)) areas.push(+it.NET_AREA_to);
+    });
+    const areaMin = areas.length ? Math.max(1, Math.min(...areas)) : 1;
+    const areaMax = areas.length ? Math.max(...areas) : 1;
+
+    const nodeMap = new Map();
+    const covSeen = new Set();
+    
+    const network1Count = data.filter(d => d._network === 1).length;
+    const network2Count = data.filter(d => d._network === 2).length;
+
+    function addNode(keyNum, year, cov, area, side, networkNum) {
+        const id = `${keyNum}_${year}_net${networkNum}`;
+        if (nodeMap.has(id)) return id;
+
+        let label, nodeColor, nodeShape;
+        
+        if (networkNum === 1 && cov) {
+            const covKey = normalizeCov(cov);
+            covSeen.add(covKey);
+            label = `${year}\n${getCovTypeLabel(covKey)}`;
+            nodeColor = getCovColor(covKey);
+            nodeShape = 'dot';
+        } 
+        else if (networkNum === 2) {
+            label = `${year}\n שינוי בשנת התחלה`;
+            nodeColor = getNetwork2Color(keyNum);
+            nodeShape = 'diamond'; 
+        }
+        else {
+            label = `${year}\n${keyNum}`;
+            nodeColor = '#6c757d';
+            nodeShape = 'dot';
+        }
+
+        const value = scaleLinear(+area || areaMin, areaMin, areaMax, 12, 36);
+
+        let title;
+        if (networkNum === 2) {
+            const startYearFrom = data.find(d => d.key_numbers_from === keyNum && d.year_from === year)?.START_YEAR_from || 'N/A';
+            const startYearTo = data.find(d => d.key_numbers_to === keyNum && d.year_to === year)?.START_YEAR_to || 'N/A';
+            if (startYearFrom !== 'N/A' && startYearFrom !== '0') {
+                title = `שנת התחלה: ${startYearFrom}`;
+            } else if (startYearTo !== 'N/A' && startYearTo !== '0') {
+                title = `שנת התחלה: ${startYearTo}`;
+            } else {
+                title = `שנת התחלה: N/A`;
+            }
+        } else {
+            title = `מספר: ${keyNum}\nשנת סקר: ${year}\nסוג כיסוי: ${cov || 'N/A'}\nשטח נטו: ${area || 'N/A'} דונם`;
+        }
+
+        nodeMap.set(id, {
+            id,
+            label,
+            title: title,
+            value,
+            level: parseInt(year, 10) || undefined,
+            shape: nodeShape,
+            color: {
+                background: nodeColor,
+                border: networkNum === 2 ? '#2c3e50' : nodeColor,
+                highlight: { 
+                    background: nodeColor, 
+                    border: networkNum === 2 ? '#34495e' : '#1b1b1b' 
+                }
+            },
+            borderWidth: networkNum === 2 ? 3 : 2,
+            font: { 
+                size: 12, 
+                face: 'Arial', 
+                color: networkNum === 2 ? '#2c3e50' : '#1b1b1b',
+                bold: networkNum === 2
+            },
+            shadow: true
+        });
+        return id;
+    }
+
+    const edgeAgg = new Map();
+    
+    data.forEach(item => {
+        const networkNum = item._network || 1;
+        const fromId = addNode(
+            item.key_numbers_from, 
+            item.year_from, 
+            item.COV_TYPE_from, 
+            item.NET_AREA_from, 
+            'from',
+            networkNum
+        );
+        const toId = addNode(
+            item.key_numbers_to, 
+            item.year_to, 
+            item.COV_TYPE_to, 
+            item.NET_AREA_to, 
+            'to',
+            networkNum
+        );
+
+        const k = `${fromId}|${toId}`;
+        if (!edgeAgg.has(k)) {
+            edgeAgg.set(k, {
+                from: fromId,
+                to: toId,
+                count: 0,
+                years: [],
+                networkNum: networkNum
+            });
+        }
+        const e = edgeAgg.get(k);
+        e.count += 1;
+        e.years.push(`${item.year_to}→${item.year_from}`);
+    });
+
+    const nodes = new vis.DataSet(Array.from(nodeMap.values()));
+    const edges = new vis.DataSet(
+        Array.from(edgeAgg.values()).map(e => {
+            const label = e.count > 1 ? `x${e.count}` : e.years[0];
+            const isNetwork2 = e.networkNum === 2;
+            
+            return {
+                from: e.from,
+                to: e.to,
+                label,
+                arrows: { 
+                    to: { 
+                        enabled: true, 
+                        scaleFactor: 1.0,
+                        type: isNetwork2 ? 'arrow' : 'arrow'
+                    } 
+                },
+                width: Math.min(6, 2 + Math.log2(1 + e.count)),
+                selectionWidth: 3,
+                hoverWidth: 3,
+                color: { 
+                    color: isNetwork2 ? '#3498db' : '#7f8c8d',
+                    opacity: 0.6,
+                    highlight: isNetwork2 ? '#2980b9' : '#34495e',
+                    hover: isNetwork2 ? '#2980b9' : '#34495e'
+                },
+                dashes: isNetwork2, 
+                smooth: { 
+                    type: 'cubicBezier', 
+                    forceDirection: 'horizontal', 
+                    roundness: 0.35 
+                },
+                font: { 
+                    size: 11, 
+                    strokeWidth: 3, 
+                    strokeColor: '#ffffff',
+                    bold: isNetwork2
+                }
+            };
+        })
+    );
+
+    const options = {
+        layout: {
+            hierarchical: {
+                enabled: true,
+                direction: 'LR',
+                sortMethod: 'directed',
+                levelSeparation: 160,
+                nodeSpacing: 140,
+                treeSpacing: 260,
+                shakeTowards: 'leaves',
+                blockShifting: true
+            },
+            improvedLayout: false
+        },
+        physics: {
+            solver: 'hierarchicalRepulsion',
+            hierarchicalRepulsion: {
+                nodeDistance: 180,
+                springLength: 120,
+                springConstant: 0.01,
+                damping: 0.15,
+                avoidOverlap: 1
+            },
+            stabilization: { 
+                enabled: true, 
+                iterations: 500, 
+                updateInterval: 50, 
+                fit: true 
+            }
+        },
+        nodes: {
+            borderWidth: 2,
+            borderWidthSelected: 3
+        },
+        edges: {
+            smooth: true
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 120,
+            navigationButtons: true,
+            keyboard: true,
+            zoomView: true,
+            dragNodes: true,
+            multiselect: true
+        }
+    };
+
+    const prog = document.createElement('div');
+    prog.style.cssText = `
+        position:absolute; top:8px; left:8px; background:#ffffffcc; padding:6px 8px;
+        border-radius:8px; font:12px/1.2 Arial; z-index:10;`;
+    prog.textContent = `טוען פריסת רשת... (רשת 1: ${network1Count} קשרים, רשת 2: ${network2Count} קשרים)`;
+    container.style.position = 'relative';
+    container.appendChild(prog);
+
+    network = new vis.Network(container, { nodes, edges }, options);
+
+    network.once('stabilizationIterationsDone', () => {
+        network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+        prog.remove();
+    });
+
+    network.on('doubleClick', () => {
+        network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+    });
+
+    renderCombinedLegend(Array.from(covSeen), network1Count > 0, network2Count > 0);
+}
+
+function renderCombinedLegend(covList, hasNetwork1, hasNetwork2) {
+    const modal = document.getElementById('networkModal');
+    if (!modal) return;
+
+    let legend = modal.querySelector('.cov-legend');
+    if (!legend) {
+        legend = document.createElement('div');
+        legend.className = 'cov-legend';
+        legend.style.cssText = `
+            position:absolute; top:10px; right:12px; background:#ffffffd8;
+            border:1px solid #e5e5e5; border-radius:10px; padding:6px 10px; max-width:70%;
+            font:12px/1.2 Arial; display:flex; gap:10px; flex-wrap:wrap;`;
+        modal.appendChild(legend);
+    }
+    
+    let legendHTML = '';
+    
+    if (hasNetwork1 && hasNetwork2) {
+        legendHTML += '<div style="width:100%;font-weight:bold;margin-bottom:5px;">סימון רשתות:</div>';
+        legendHTML += '<span style="display:flex;align-items:center;gap:6px;">';
+        legendHTML += '<span style="width:12px;height:12px;background:#667eea;border-radius:50%;border:1px solid #0001;"></span>רשת 1 (עיגול)</span>';
+        legendHTML += '<span style="display:flex;align-items:center;gap:6px;">';
+        legendHTML += '<span style="width:12px;height:12px;background:#3498db;border-radius:0;transform:rotate(45deg);border:1px solid #0001;"></span>רשת 2 (יהלום)</span>';
+        legendHTML += '<div style="width:100%;height:1px;background:#ddd;margin:5px 0;"></div>';
+    }
+    
+    if (covList.length > 0) {
+        legendHTML += '<div style="width:100%;font-weight:bold;margin-bottom:5px;">סוגי כיסוי (רשת 1):</div>';
+        legendHTML += covList.slice(0, 14).map(c => {
+            const color = getCovColor(c);
+            const name = getCovTypeLabel(c);
+            return `<span style="display:flex;align-items:center;gap:6px;">
+                <span style="width:12px;height:12px;background:${color};border-radius:3px;border:1px solid #0001;"></span>${name}
+            </span>`;
+        }).join('');
+    }
+    
+    legend.innerHTML = legendHTML;
+}
+
+function getNetwork2Color(keyNum) {
+    const colors = [
+        '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
+        '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#16a085'
+    ];
+    
+    let hash = 0;
+    const str = String(keyNum);
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function normalizeCov(c) {
+    const n = Number(c);
+    return Number.isFinite(n) ? Math.round(n) : String(c);
+}
+
+function scaleLinear(x, inMin, inMax, outMin, outMax) {
+    if (inMax === inMin) return (outMin + outMax) / 2;
+    const t = Math.max(0, Math.min(1, (x - inMin) / (inMax - inMin)));
+    return outMin + t * (outMax - outMin);
+}
+
+const covTypeColors = {
+  1100: '#004d00',
+  1102: '#225e28',
+  1103: '#006600',
+  1104: '#008000',
+  1105: '#009900',
+  1106: '#33cc33',
+  1191: '#55aa55',
+  1192: '#77bb77',
+  1193: '#99cc99',
+  1200: '#228b22',
+  1202: '#66ff66',
+  1204: '#99ff99',
+  1207: '#bbffbb',
+  1221: '#ccffcc',
+  1231: '#e5e5e5',
+  1310: '#006a4e',
+  1900: '#2f4f4f',
+  1991: '#006600',
+  1992: '#808080',
+  2000: '#8b4513',
+  2100: '#a0522d',
+  2104: '#cd853f',
+  2108: '#deb887',
+  2113: '#f4a460',
+  2200: '#d2691e',
+  2211: '#b87333',
+  2225: '#daa520',
+  2371: '#f4a261',
+  2420: '#ff9da7',
+  2900: '#9acd32',
+  2990: '#ffd700',
+  2994: '#808000',
+  2995: '#556b2f',
+  3000: '#228b22',
+  3030: '#009900',
+  3031: '#32cd32',
+  3033: '#8c564b',
+  3040: '#33cc33',
+  3042: '#66ff66',
+  3044: '#99ff99',
+  3060: '#008000',
+  3091: '#6b8e23',
+  3095: '#3b5323',
+  3111: '#e07a5f',
+  3121: '#ff69b4',
+  3222: '#f4a261',
+  3261: '#cd5c5c',
+  3271: '#ff9da7',
+  3900: '#8c564b',
+  3910: '#006400',
+  3920: '#228b22',
+  3930: '#6b8e23',
+  3940: '#e07a5f',
+  3960: '#2e8b57',
+  3971: '#8fbc8f',
+  3981: '#f4a261',
+  3982: '#ff9da7',
+  4000: '#ba55d3',
+  4121: '#dda0dd',
+  4191: '#ffb6c1',
+  6200: '#f4a261',
+  9900: '#8e8d8a',
+  9970: '#a9a9a9',
+  9990: '#dcdcdc',
+  9998: '#ff9da7',
+  9999: '#f4a261'
+};
+
+function getCovColor(cov) {
+    const key = normalizeCov(cov);
+    return covTypeColors[key] || '#6c757d';
+}
+
+function getCovTypeLabel(covType) {
+    const covTypeDescriptions = {
+        1100: 'אורנים',
+        1102: 'לא ידוע 1',
+        1103: 'אורן ברוטיה',
+        1104: 'אורן גלעין',
+        1105: 'אורן ירושלים',
+        1106: 'אורן כנארי',
+        1191: 'מעורב א.ירושלים - א.ברוטיה',
+        1192: 'מעורב א.ירושלים - ברוש מצוי',
+        1193: 'מעורב א.ברוטיה - ברוש מצוי',
+        1200: 'ברושים',
+        1202: 'ברוש אריזוני',
+        1204: 'ברוש מצוי',
+        1207: 'לא ידוע 2',
+        1221: 'לא ידוע 3',
+        1231: 'לא ידוע 4',
+        1310: 'ארזים',
+        1900: 'מעורב עצי מחט',
+        1991: 'מעורב עצי מחט - רחבי עלים',
+        1992: 'לא ידוע 5',
+        2000: 'עצים רחבי עלים',
+        2100: 'אקליפטוסים',
+        2104: 'לא ידוע 6',
+        2108: 'אקליפטוס גומפוצפלה',
+        2113: 'אקליפטוס המקור',
+        2200: 'שיטים',
+        2211: 'שיטה כחלחלה',
+        2225: 'לא ידוע 7',
+        2371: 'לא ידוע 7',
+        2420: 'לא ידוע 8',
+        2900: 'מעורב רחבי עלים',
+        2990: 'עצי פרי',
+        2994: 'זיתים',
+        2995: 'חרובים',
+        3000: 'עצי חורש ארץ ישראלי',
+        3030: 'אלות',
+        3031: 'אלה אטלנטית',
+        3033: 'לא ידוע 9',
+        3040: 'אלונים',
+        3042: 'אלון מצוי',
+        3044: 'אלון תבור',
+        3060: 'אשלים',
+        3091: 'זית אירופי',
+        3095: 'זית אירופי נבאלי',
+        3111: 'לא ידוע 10',
+        3121: 'כליל החורש',
+        3222: 'לא ידוע 11',
+        3261: 'שיזף מצוי',
+        3271: 'לא ידוע 12',
+        3900: 'לא ידוע 13',
+        3910: 'חורש טבעי צפוף',
+        3920: 'חורש טבעי בינוני',
+        3930: 'חורש טבעי דליל',
+        3940: 'לא ידוע 14',
+        3960: 'חורש ער אציל - אלון תולע',
+        3971: 'בני שיח ערבתיים',
+        3981: 'לא ידוע 15',
+        3982: 'לא ידוע 21',
+        4000: 'שיחים וצמחי גיוון',
+        4121: 'לא ידוע 16',
+        4191: 'לא ידוע 17',
+        6200: 'לא ידוע 18',
+        9900: 'דליל',
+        9970: 'חלקת נסיון',
+        9990: 'ריק',
+        9998: 'לא ידוע 19',
+        9999: 'לא ידוע 20'
+    };
+    
+    return covTypeDescriptions[covType] || `סוג ${covType}`;
+}
+
+document.getElementById('networkModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeNetworkModal();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('networkModal').style.display === 'block') {
+        closeNetworkModal();
+    }
+});
+
+
+
+//                      ESRI MAP CODE BELOW
+
+
+  function toggleLegend() {
+    const c = document.getElementById('legendContent');
+    const t = document.getElementById('legendToggle');
+    c.classList.toggle('collapsed');
+    t.classList.toggle('collapsed');
+  }
+  function scrollEvents(direction) {
+    document.getElementById('eventTypesContainer').scrollLeft += 300 * direction;
+  }
+
+  require([
+    "esri/Map",
+    "esri/views/MapView",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Search",
+    "esri/widgets/TimeSlider"
+  ], function (Map, MapView, FeatureLayer, Search, TimeSlider) {
+
+    let featureLayer, featureForest;
+    let activeEventType = null;   
+    let eventTypeField = null;
+    let FIELD = {};              
+    let timeSlider = null;
+    let currentTimeExtent = null;
+    let highlightSelect = null;
+    let forestHighlight = null; // Add this line
+
+    let forestLayerManuallyToggled = false;
+    let lastExtentJSON = null;
+    let photoPointsLayer = null;
+    let photosData = {};
+
+    const map = new Map({ basemap: "satellite" });
+    const view = new MapView({
+      container: "mapView",
+      map,
+      center: [35.0818, 31.5],
+      zoom: 8
+    });
+
+    function showError(msg) {
+      const el = document.getElementById('errorMessage');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    function hasField(layer, name) {
+      return !!layer.fields?.some(f => f.name === name);
+    }
+    function firstExisting(layer, names) {
+      return names.find(n => hasField(layer, n)) || null;
+    }
+    function sqlString(v) {
+      if (v == null) return "NULL";
+      return "'" + String(v).replace(/'/g, "''") + "'";
+    }
+
+
+function formatSqlFilter(layer, fieldName, value) {
+    if (!layer || !fieldName || value == null || value === "") {
+        return null; 
+    }
+
+    const field = layer.fields?.find(f => f.name === fieldName);
+    
+    if (!field) {
+        console.warn(`Field ${fieldName} not found, defaulting to string filter.`);
+        return `${fieldName} = '${String(value).replace(/'/g, "''")}'`;
+    }
+
+    const { type } = field;
+    const isNumeric = ['integer', 'double', 'small-integer', 'big-integer', 'single', 'long', 'number', 'oid'].includes(type);
+
+    if (isNumeric) {
+        const numVal = Number(value);
+        if (isNaN(numVal)) {
+            console.warn(`Invalid number value "${value}" for numeric field ${fieldName}`);
+            return null; 
+        }
+        return `${fieldName} = ${numVal}`; 
+    } else {
+        return `${fieldName} = '${String(value).replace(/'/g, "''")}'`; 
+    }
+}
+
+    function debounce(fn, ms = 200) {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+    const debouncedApply = debounce(applyFilters, 200);
+
+function formatDateShort(yearValue) {
+  if (!yearValue) return '-';
+  if (typeof yearValue === 'number' || !isNaN(yearValue)) {
+    return yearValue.toString();
+  }
+  const d = new Date(yearValue);
+  if (isNaN(d)) return '-';
+  return d.getFullYear().toString();
+}
+
+
+function formatDateFull(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.getFullYear().toString();
+}
+    function getActiveFilters() {
+      return {
+        DistrictName: document.getElementById('DistrictName')?.value || "",
+        region: document.getElementById('region')?.value || "",
+        forest: document.getElementById('forest')?.value || "",
+        gush:   document.getElementById('gush')?.value || "",
+        parcel: document.getElementById('parcel')?.value || "",
+        stand:  document.getElementById('stand')?.value || ""
+      };
+    }
+
+    const SIZE_STOPS = [
+      { value: 2, size: 20 }, { value: 10, size: 26 }, { value: 50, size: 34 },
+      { value: 200, size: 44 }, { value: 1000, size: 54 }
+    ];
+    const COLOR_STOPS = [
+      { value: 2, color: "#e8fcd4" }, { value: 10, color: "#b7f293" },
+      { value: 50, color: "#74cf75" }, { value: 200, color: "#39a96b" },
+      { value: 1000, color: "#1f7c4c" }
+    ];
+    const clusterRenderer = {
+      type: "simple",
+      symbol: { type: "simple-marker", style: "circle", size: 20, color: "#e8fcd4", outline: { color: "#fff", width: 1 } },
+      visualVariables: [
+        { type: "size", field: "cluster_count", stops: SIZE_STOPS, legendOptions: { title: "כמות אירועים בקבוצה" } },
+        { type: "color", field: "cluster_count", stops: COLOR_STOPS, legendOptions: { title: "עוצמת צפיפות" } }
+      ]
+    };
+
+    featureLayer = new FeatureLayer({
+      portalItem: { id: "ee2a901cd3d44e79bfb9bd718818f5ab" },
+      layerId: 1,
+      outFields: ["OBJECTID"],
+      popupEnabled: true,
+      featureReduction: {
+        type: "cluster",
+        clusterRadius: "80px",
+        labelsVisible: true,
+        labelingInfo: [{
+          deconflictionStrategy: "none",
+          labelPlacement: "center-center",
+          labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
+          symbol: {
+            type: "text",
+            color: "white",
+            haloColor: "black",
+            haloSize: 1.5,
+            font: { family: "Arial Unicode MS", size: 12, weight: "bold" }
+          }
+        }],
+        popupTemplate: {
+          title: "קבוצה של {cluster_count} אירועים",
+          content: "התקרב כדי לפרק את הקבוצה לאירועים בודדים."
+        },
+        renderer: clusterRenderer
+      }
+    });
+
+
+    featureForest = new FeatureLayer({
+      portalItem: { id: "ee2a901cd3d44e79bfb9bd718818f5ab" },
+      layerId: 0,
+      outFields: ["*"],
+      definitionExpression: "UPDATE_CODE = 'D'",
+            // definitionExpression: "1=1",
+
+      labelsVisible: true,
+      labelingInfo: [{
+        symbol: {
+          type: "text",
+          color: [255,255,255,0.9],
+          haloColor: [0,100,0,0.9],
+          haloSize: 2,
+          font: { family: "Arial Unicode MS", size: 12, weight: "bold" }
+        }      }],
+      renderer: {
+        type: "unique-value",
+        field: "COV_TYPE_NAME",
+        defaultSymbol: { type: "simple-fill", color: [200,200,200,0.3], outline: { color: [100,100,100,0.6], width: 1 } },
+
+uniqueValueInfos: [
+                        {
+                            value: "מעורב עצי מחט",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 77, 0, 0.4],
+                                outline: {
+                                    color: [0, 51, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב עצי מחט"
+                        },
+                        {
+                            value: "אורן ברוטיה",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 102, 0, 0.4],
+                                outline: {
+                                    color: [0, 77, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן ברוטיה"
+                        },
+                        {
+                            value: "אורן ירושלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 128, 0, 0.4],
+                                outline: {
+                                    color: [0, 102, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן ירושלים"
+                        },
+                        {
+                            value: "רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [34, 139, 34, 0.4],
+                                outline: {
+                                    color: [0, 100, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "רחבי עלים"
+                        },
+                        {
+                            value: "מעורב עצי מחט - רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [60, 179, 113, 0.4],
+                                outline: {
+                                    color: [46, 125, 50, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב עצי מחט - רחבי עלים"
+                        },
+                        {
+                            value: "ברוש מצוי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [46, 125, 50, 0.4],
+                                outline: {
+                                    color: [27, 94, 32, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "ברוש מצוי"
+                        },
+                        {
+                            value: "אקליפטוס גומפוצפלה",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [107, 142, 35, 0.4],
+                                outline: {
+                                    color: [85, 107, 47, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אקליפטוס גומפוצפלה"
+                        },
+                        {
+                            value: "זיתים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [128, 128, 0, 0.4],
+                                outline: {
+                                    color: [107, 107, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "זיתים"
+                        },
+                        {
+                            value: "חרובים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [85, 107, 47, 0.4],
+                                outline: {
+                                    color: [62, 77, 36, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חרובים"
+                        },
+                        {
+                            value: "אורן גלעין",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 153, 0, 0.4],
+                                outline: {
+                                    color: [0, 128, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן גלעין"
+                        },
+                        {
+                            value: "מעורב רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [144, 238, 144, 0.4],
+                                outline: {
+                                    color: [0, 128, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב רחבי עלים"
+                        },
+                        {
+                            value: "עצי פרי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [255, 192, 203, 0.4],
+                                outline: {
+                                    color: [219, 112, 147, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "עצי פרי"
+                        },
+                        {
+                            value: "חורש עד אציל - אלון חולע",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [154, 205, 50, 0.4],
+                                outline: {
+                                    color: [107, 142, 35, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חורש עד אציל - אלון חולע"
+                        },
+                        {
+                            value: "עצי חורש ארץ ישראלי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [173, 255, 47, 0.4],
+                                outline: {
+                                    color: [124, 179, 66, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "עצי חורש ארץ ישראלי"
+                        },
+                        {
+                            value: "חורש טבעי דליל",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [189, 183, 107, 0.4],
+                                outline: {
+                                    color: [139, 134, 78, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חורש טבעי דליל"
+                        },
+                        {
+                            value: "בני שיח עבותיים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [188, 143, 143, 0.4],
+                                outline: {
+                                    color: [139, 90, 90, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "בני שיח עבותיים"
+                        },
+                        {
+                            value: "אקליפטוס המקור",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [143, 188, 143, 0.4],
+                                outline: {
+                                    color: [107, 142, 107, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אקליפטוס המקור"
+                        },
+                        {
+                            value: "Other",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [192, 192, 192, 0.3],
+                                outline: {
+                                    color: [128, 128, 128, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "Other"
+                        }
+                    ]
+      },
+      popupTemplate: {
+        title: "{ForestName}",
+        content: function (feature) {
+          const a = feature.graphic.attributes;
+          const area = (a.NET_AREA ? Number(a.NET_AREA).toFixed(1)
+                                   : (a.AREA ? Number(a.AREA).toFixed(1)
+                                             : (a.Shape_Area ? (Number(a.Shape_Area)/1000).toFixed(1) : "-")));
+          return "יער: " + (a.ForestName ?? "-")
+            + "<br>גוש: " + (a.ForestGushName ?? "-")
+            + "<br>חלקה: " + (a.HELKA ?? "-")
+            + "<br>עומד: " + (a.STAND_NO ?? "-")
+            + "<br>סוג כיסוי: " + (a.COV_TYPE_NAME ?? "-")
+            + "<br>שטח: " + area + " דונם"
+            + "<br>אזור: " + (a.RegionName ?? a.REGION ?? "-");
+        }
+      }
+    });
+
+
+    
+    featureForestCurrent = new FeatureLayer({
+      portalItem: { id: "ee2a901cd3d44e79bfb9bd718818f5ab" },
+      layerId: 0,
+      outFields: ["*"],
+      definitionExpression: "UPDATE_CODE <> 'D' OR UPDATE_CODE IS NULL",
+            // definitionExpression: "1=1",
+
+      labelsVisible: true,
+      labelingInfo: [{
+        symbol: {
+          type: "text",
+          color: [255,255,255,0.9],
+          haloColor: [0,100,0,0.9],
+          haloSize: 2,
+          font: { family: "Arial Unicode MS", size: 12, weight: "bold" }
+        }      }],
+      renderer: {
+        type: "unique-value",
+        field: "COV_TYPE_NAME",
+        defaultSymbol: { type: "simple-fill", color: [200,200,200,0.3], outline: { color: [100,100,100,0.6], width: 1 } },
+
+uniqueValueInfos: [
+                        {
+                            value: "מעורב עצי מחט",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 77, 0, 0.4],
+                                outline: {
+                                    color: [0, 51, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב עצי מחט"
+                        },
+                        {
+                            value: "אורן ברוטיה",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 102, 0, 0.4],
+                                outline: {
+                                    color: [0, 77, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן ברוטיה"
+                        },
+                        {
+                            value: "אורן ירושלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 128, 0, 0.4],
+                                outline: {
+                                    color: [0, 102, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן ירושלים"
+                        },
+                        {
+                            value: "רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [34, 139, 34, 0.4],
+                                outline: {
+                                    color: [0, 100, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "רחבי עלים"
+                        },
+                        {
+                            value: "מעורב עצי מחט - רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [60, 179, 113, 0.4],
+                                outline: {
+                                    color: [46, 125, 50, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב עצי מחט - רחבי עלים"
+                        },
+                        {
+                            value: "ברוש מצוי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [46, 125, 50, 0.4],
+                                outline: {
+                                    color: [27, 94, 32, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "ברוש מצוי"
+                        },
+                        {
+                            value: "אקליפטוס גומפוצפלה",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [107, 142, 35, 0.4],
+                                outline: {
+                                    color: [85, 107, 47, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אקליפטוס גומפוצפלה"
+                        },
+                        {
+                            value: "זיתים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [128, 128, 0, 0.4],
+                                outline: {
+                                    color: [107, 107, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "זיתים"
+                        },
+                        {
+                            value: "חרובים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [85, 107, 47, 0.4],
+                                outline: {
+                                    color: [62, 77, 36, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חרובים"
+                        },
+                        {
+                            value: "אורן גלעין",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [0, 153, 0, 0.4],
+                                outline: {
+                                    color: [0, 128, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אורן גלעין"
+                        },
+                        {
+                            value: "מעורב רחבי עלים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [144, 238, 144, 0.4],
+                                outline: {
+                                    color: [0, 128, 0, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "מעורב רחבי עלים"
+                        },
+                        {
+                            value: "עצי פרי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [255, 192, 203, 0.4],
+                                outline: {
+                                    color: [219, 112, 147, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "עצי פרי"
+                        },
+                        {
+                            value: "חורש עד אציל - אלון חולע",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [154, 205, 50, 0.4],
+                                outline: {
+                                    color: [107, 142, 35, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חורש עד אציל - אלון חולע"
+                        },
+                        {
+                            value: "עצי חורש ארץ ישראלי",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [173, 255, 47, 0.4],
+                                outline: {
+                                    color: [124, 179, 66, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "עצי חורש ארץ ישראלי"
+                        },
+                        {
+                            value: "חורש טבעי דליל",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [189, 183, 107, 0.4],
+                                outline: {
+                                    color: [139, 134, 78, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "חורש טבעי דליל"
+                        },
+                        {
+                            value: "בני שיח עבותיים",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [188, 143, 143, 0.4],
+                                outline: {
+                                    color: [139, 90, 90, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "בני שיח עבותיים"
+                        },
+                        {
+                            value: "אקליפטוס המקור",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [143, 188, 143, 0.4],
+                                outline: {
+                                    color: [107, 142, 107, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "אקליפטוס המקור"
+                        },
+                        {
+                            value: "Other",
+                            symbol: {
+                                type: "simple-fill",
+                                color: [192, 192, 192, 0.3],
+                                outline: {
+                                    color: [128, 128, 128, 0.8],
+                                    width: 2
+                                }
+                            },
+                            label: "Other"
+                        }
+                    ]
+      },
+      popupTemplate: {
+        title: "{ForestName}",
+        content: function (feature) {
+          const a = feature.graphic.attributes;
+          const area = (a.NET_AREA ? Number(a.NET_AREA).toFixed(1)
+                                   : (a.AREA ? Number(a.AREA).toFixed(1)
+                                             : (a.Shape_Area ? (Number(a.Shape_Area)/1000).toFixed(1) : "-")));
+          return "יער: " + (a.ForestName ?? "-")
+            + "<br>גוש: " + (a.ForestGushName ?? "-")
+            + "<br>חלקה: " + (a.HELKA ?? "-")
+            + "<br>עומד: " + (a.STAND_NO ?? "-")
+            + "<br>סוג כיסוי: " + (a.COV_TYPE_NAME ?? "-")
+            + "<br>שטח: " + area + " דונם"
+            + "<br>אזור: " + (a.RegionName ?? a.REGION ?? "-");
+        }
+      }
+    });
+
+
+    map.addMany([featureForest, featureLayer,featureForestCurrent]);
+
+    document.getElementById('forestLayerToggle')?.addEventListener('change', (e) => {
+    forestLayerManuallyToggled = true;
+    featureForest.visible = e.target.checked; 
+    });
+
+
+    document.getElementById('forestCurrentLayerToggle')?.addEventListener('change', (e) => {
+    forestLayerManuallyToggled = true;
+    featureForestCurrent.visible = e.target.checked; 
+    });
+
+    document.getElementById('eventsLayerToggle')?.addEventListener('change', (e) => {
+      featureLayer.visible = e.target.checked;
+    });
+    document.getElementById('imagesLayerToggle')?.addEventListener('change', (e) => {
+        if (photoPointsLayer) {
+            photoPointsLayer.visible = e.target.checked;
+        }
+    });
+
+// #################################################################  pics 
+
+function loadPhotoPoints() {
+  require([
+    "esri/layers/FeatureLayer",
+    "esri/popup/content/AttachmentsContent",
+    "esri/popup/content/CustomContent"
+  ], function (FeatureLayer, AttachmentsContent, CustomContent) {
+    try {
+      // Remove old layer if it exists
+      if (photoPointsLayer) {
+        map.remove(photoPointsLayer);
+        photoPointsLayer.destroy();
+      }
+
+      photoPointsLayer = new FeatureLayer({
+        id: "photoPoints",
+        title: "נקודות צילום (AGOL)",
+        portalItem: { id: "95554845cf784661819992b52b5778f2" },
+        layerId: 0,
+        outFields: ["*"],
+        visible: false,
+        
+      renderer: {
+        type: "simple",
+        symbol: {
+          type: "picture-marker",
+          url: "./camera.png",     
+          width: "18px",
+          height: "18px"
+        }
+      },
+        
+        featureReduction: null,
+        popupEnabled: true,
+        
+        popupTemplate: {
+          title: "תמונות",
+            content: [
+              new CustomContent({
+                outFields: ["*"],
+                creator: function(event) {
+                  const graphic = event.graphic;
+                  const div = document.createElement("div");
+                  div.style.cssText = "padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;";
+                  
+                  graphic.layer.queryAttachments({
+                    objectIds: [graphic.attributes[graphic.layer.objectIdField]],
+                    returnMetadata: true
+                  }).then(function(result) {
+                    const attachments = result[graphic.attributes[graphic.layer.objectIdField]] || [];
+                    const count = attachments.length;
+                    let currentIndex = 0;
+                    
+                    div.innerHTML = `
+                      <!-- Header with count badge -->
+                      <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 15px;
+                        border-radius: 12px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                        text-align: center;
+                        position: relative;
+                        overflow: hidden;
+                      ">
+                        <div style="
+                          position: absolute;
+                          top: -50%;
+                          right: -50%;
+                          width: 200%;
+                          height: 200%;
+                          background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+                          animation: shimmer 3s infinite;
+                        "></div>
+                        <div style="font-size: 36px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                          📸 ${count}
+                        </div>
+                        <div style="font-size: 16px; margin-top: 5px; opacity: 0.95;">
+                          ${count === 1 ? 'תמונה זמינה' : 'תמונות זמינות'}
+                        </div>
+                      </div>
+                      
+                      ${attachments.length > 0 ? `
+                        <!-- Image Viewer Container -->
+                        <div style="position: relative; margin-bottom: 20px;">
+                          <!-- Main Image Display -->
+                          <div id="imageContainer-${graphic.attributes[graphic.layer.objectIdField]}" style="
+                            position: relative;
+                            border-radius: 12px;
+                            overflow: hidden;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+                            background: linear-gradient(45deg, #f3f4f6, #e5e7eb);
+                            min-height: 300px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                          ">
+                            <img 
+                              id="mainImage-${graphic.attributes[graphic.layer.objectIdField]}"
+                              src="${attachments[0].url}" 
+                              style="
+                                width: 100%;
+                                height: auto;
+                                max-height: 500px;
+                                object-fit: contain;
+                                cursor: zoom-in;
+                                transition: transform 0.3s ease;
+                              "
+                              onclick="window.open(this.src, '_blank')"
+                              onmouseover="this.style.transform='scale(1.02)'"
+                              onmouseout="this.style.transform='scale(1)'"
+                            />
+                            
+                            ${attachments.length > 1 ? `
+                              <!-- Navigation Arrows -->
+                              <button 
+                                id="prevBtn-${graphic.attributes[graphic.layer.objectIdField]}"
+                                style="
+                                  position: absolute;
+                                  left: 10px;
+                                  top: 50%;
+                                  transform: translateY(-50%);
+                                  background: rgba(255, 255, 255, 0.95);
+                                  border: none;
+                                  width: 45px;
+                                  height: 45px;
+                                  border-radius: 50%;
+                                  cursor: pointer;
+                                  display: flex;
+                                  align-items: center;
+                                  justify-content: center;
+                                  font-size: 20px;
+                                  font-weight: bold;
+                                  color: #667eea;
+                                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                  transition: all 0.3s ease;
+                                  z-index: 10;
+                                "
+                                onmouseover="this.style.transform='translateY(-50%) scale(1.1)'; this.style.background='#667eea'; this.style.color='white';"
+                                onmouseout="this.style.transform='translateY(-50%) scale(1)'; this.style.background='rgba(255, 255, 255, 0.95)'; this.style.color='#667eea';"
+                              >‹</button>
+                              
+                              <button 
+                                id="nextBtn-${graphic.attributes[graphic.layer.objectIdField]}"
+                                style="
+                                  position: absolute;
+                                  right: 10px;
+                                  top: 50%;
+                                  transform: translateY(-50%);
+                                  background: rgba(255, 255, 255, 0.95);
+                                  border: none;
+                                  width: 45px;
+                                  height: 45px;
+                                  border-radius: 50%;
+                                  cursor: pointer;
+                                  display: flex;
+                                  align-items: center;
+                                  justify-content: center;
+                                  font-size: 20px;
+                                  font-weight: bold;
+                                  color: #667eea;
+                                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                  transition: all 0.3s ease;
+                                  z-index: 10;
+                                "
+                                onmouseover="this.style.transform='translateY(-50%) scale(1.1)'; this.style.background='#667eea'; this.style.color='white';"
+                                onmouseout="this.style.transform='translateY(-50%) scale(1)'; this.style.background='rgba(255, 255, 255, 0.95)'; this.style.color='#667eea';"
+                              >›</button>
+                            ` : ''}
+                            
+                            <!-- Image Counter Badge -->
+                            <div style="
+                              position: absolute;
+                              top: 15px;
+                              right: 15px;
+                              background: rgba(0, 0, 0, 0.7);
+                              color: white;
+                              padding: 8px 12px;
+                              border-radius: 20px;
+                              font-size: 14px;
+                              font-weight: 500;
+                              backdrop-filter: blur(10px);
+                            ">
+                              <span id="imageCounter-${graphic.attributes[graphic.layer.objectIdField]}">1</span> / ${count}
+                            </div>
+                          </div>
+                          
+                          ${attachments.length > 1 ? `
+                            <!-- Thumbnail Strip -->
+                            <div style="
+                              margin-top: 15px;
+                              display: flex;
+                              gap: 10px;
+                              overflow-x: auto;
+                              padding: 10px;
+                              background: rgba(0, 0, 0, 0.03);
+                              border-radius: 8px;
+                              align-items: center;
+                              justify-content: center;
+                            ">
+                              ${attachments.map((att, idx) => `
+                                <div 
+                                  class="thumbnail"
+                                  data-index="${idx}"
+                                  style="
+                                    flex-shrink: 0;
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                    cursor: pointer;
+                                    border: 3px solid ${idx === 0 ? '#667eea' : 'transparent'};
+                                    transition: all 0.3s ease;
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                                  "
+                                  onclick="
+                                    // Update main image
+                                    document.getElementById('mainImage-${graphic.attributes[graphic.layer.objectIdField]}').src = '${att.url}';
+                                    document.getElementById('imageCounter-${graphic.attributes[graphic.layer.objectIdField]}').textContent = '${idx + 1}';
+                                    
+                                    // Update thumbnail borders
+                                    this.parentElement.querySelectorAll('.thumbnail').forEach(t => {
+                                      t.style.border = '3px solid transparent';
+                                    });
+                                    this.style.border = '3px solid #667eea';
+                                    
+                                    // Update current index for navigation
+                                    window['currentIndex_${graphic.attributes[graphic.layer.objectIdField]}'] = ${idx};
+                                  "
+                                  onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)';"
+                                  onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';"
+                                >
+                                  <img 
+                                    src="${att.url}" 
+                                    style="
+                                      width: 100%;
+                                      height: 100%;
+                                      object-fit: cover;
+                                    "
+                                  />
+                                </div>
+                              `).join('')}
+                            </div>
+                          ` : ''}
+                        </div>
+                      ` : `
+                        <!-- No Images Message -->
+                        <div style="
+                          text-align: center;
+                          padding: 40px;
+                          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+                          border-radius: 12px;
+                          color: #6b7280;
+                        ">
+                          <div style="font-size: 48px; margin-bottom: 10px;">📷</div>
+                          <div style="font-size: 16px;">אין תמונות זמינות</div>
+                        </div>
+                      `}
+                      
+                      <style>
+                        @keyframes shimmer {
+                          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                          100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+                        }
+                      </style>
+                    `;
+                    
+                    // Add navigation functionality if there are multiple images
+                    if (attachments.length > 1) {
+                      setTimeout(() => {
+                        window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]] = 0;
+                        
+                        const prevBtn = document.getElementById('prevBtn-' + graphic.attributes[graphic.layer.objectIdField]);
+                        const nextBtn = document.getElementById('nextBtn-' + graphic.attributes[graphic.layer.objectIdField]);
+                        const mainImage = document.getElementById('mainImage-' + graphic.attributes[graphic.layer.objectIdField]);
+                        const imageCounter = document.getElementById('imageCounter-' + graphic.attributes[graphic.layer.objectIdField]);
+                        const thumbnails = div.querySelectorAll('.thumbnail');
+                        
+                        function updateImage(index) {
+                          mainImage.style.opacity = '0';
+                          setTimeout(() => {
+                            mainImage.src = attachments[index].url;
+                            mainImage.style.opacity = '1';
+                            imageCounter.textContent = index + 1;
+                            
+                            thumbnails.forEach((t, idx) => {
+                              t.style.border = idx === index ? '3px solid #667eea' : '3px solid transparent';
+                            });
+                          }, 200);
+                        }
+                        
+                        mainImage.style.transition = 'opacity 0.2s ease';
+                        
+                        if (prevBtn) {
+                          prevBtn.onclick = function() {
+                            let currentIdx = window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]];
+                            currentIdx = currentIdx > 0 ? currentIdx - 1 : attachments.length - 1;
+                            window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]] = currentIdx;
+                            updateImage(currentIdx);
+                          };
+                        }
+                        
+                        if (nextBtn) {
+                          nextBtn.onclick = function() {
+                            let currentIdx = window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]];
+                            currentIdx = currentIdx < attachments.length - 1 ? currentIdx + 1 : 0;
+                            window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]] = currentIdx;
+                            updateImage(currentIdx);
+                          };
+                        }
+                      }, 100);
+                    }
+                    
+                  }).catch(function(err) {
+                    console.error("Error querying attachments:", err);
+                    div.innerHTML = `
+                      <div style="
+                        text-align: center;
+                        padding: 20px;
+                        background: #fef2f2;
+                        border-radius: 12px;
+                        color: #dc2626;
+                        border: 1px solid #fca5a5;
+                      ">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                        <div>שגיאה בטעינת תמונות</div>
+                      </div>
+                    `;
+                  });
+                  
+                  return div;
+                }
+              })
+            ]
+        }
+      });
+
+      map.add(photoPointsLayer);
+
+      view.whenLayerView(photoPointsLayer).then(() => {
+        console.log("✅ photoPoints layer view is ready");
+      }).catch(e => {
+        console.warn("LayerView failed:", e);
+        showError("Layer added but LayerView failed: " + (e?.message || e));
+      });
+
+    } catch (e) {
+      showError("Failed to add AGOL FeatureLayer: " + (e?.message || e));
+    }
+  });
+}
+
+view.when(() => {
+  loadPhotoPoints();
+});
+
+
+    // ##################################################################################################################################
+
+
+let layoutState = 0; // 0 = split (2/3 map, 1/3 table), 1 = map only, 2 = table only
+
+window.setLayout = function (state) {
+  layoutState = state;
+
+  const mapSection   = document.getElementById('mapSection');
+  const tableSection = document.getElementById('tableSection');
+
+  if (!mapSection || !tableSection) return;
+
+  mapSection.classList.remove('collapsed', 'expanded');
+  tableSection.classList.remove('collapsed', 'expanded');
+
+  if (state === 0) {
+  } else if (state === 1) {
+    mapSection.classList.add('expanded');
+    tableSection.classList.add('collapsed');
+  } else if (state === 2) {
+    mapSection.classList.add('collapsed');
+    tableSection.classList.add('expanded');
+  }
+
+  try {
+    view.resize();
+    setTimeout(() => view.resize(), 0);
+  } catch (e) {}
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  const btnExpandMap   = document.getElementById('btnExpandMap');
+  const btnBoth        = document.getElementById('btnBoth');
+  const btnExpandTable = document.getElementById('btnExpandTable');
+
+  if (btnExpandMap)   btnExpandMap.onclick   = () => setLayout(1);
+  if (btnBoth)        btnBoth.onclick        = () => setLayout(0);
+  if (btnExpandTable) btnExpandTable.onclick = () => setLayout(2);
+});
+
+
+let minYearGlobal = null;
+let maxYearGlobal = null;
+    
+function populateYearSelects(minYear, maxYear) {
+  const fromSel = document.getElementById('yearFrom');
+  const toSel   = document.getElementById('yearTo');
+  if (!fromSel || !toSel) return;
+
+  // ניקה אפשרויות קודמות (מלבד ברירת מחדל)
+  while (fromSel.options.length > 1) fromSel.remove(1);
+  while (toSel.options.length   > 1) toSel.remove(1);
+
+  for (let y = minYear; y <= maxYear; y++) {
+    const opt1 = document.createElement('option');
+    opt1.value = String(y);
+    opt1.textContent = String(y);
+    fromSel.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = String(y);
+    opt2.textContent = String(y);
+    toSel.appendChild(opt2);
+  }
+}
+
+function getYearRangeFromSelects() {
+  const fromSel = document.getElementById('yearFrom');
+  const toSel   = document.getElementById('yearTo');
+  if (!fromSel || !toSel || !FIELD.year) return null;
+
+  const fromVal = fromSel.value ? Number(fromSel.value) : (minYearGlobal ?? null);
+  const toVal   = toSel.value   ? Number(toSel.value)   : (maxYearGlobal ?? null);
+
+  if (fromVal == null || toVal == null) return null;
+  // הבטח סדר נכון
+  const startY = Math.min(fromVal, toVal);
+  const endY   = Math.max(fromVal, toVal);
+  return { startY, endY };
+}
+
+onYearSelectChange = function() {
+  const yr = getYearRangeFromSelects();
+  if (!yr) return;
+
+  // Update the TimeSlider
+  if (timeSlider) {
+    const start = new Date(yr.startY, 0, 1);
+    const end = new Date(yr.endY, 11, 31);
+    currentTimeExtent = { start, end };
+    timeSlider.timeExtent = currentTimeExtent;
+    const datesEl = document.getElementById('timeSliderDates');
+    if (datesEl) datesEl.textContent = `${yr.startY} - ${yr.endY}`;
+  }
+
+  // Apply filters with skipRebuild flag
+  applyFilters({ skipExtent: false, skipRebuild: true });
+}
+
+
+
+async function resolveFieldsAfterLoad() {
+  eventTypeField = (function pickEventTypeField(layer) {
+    const candidates = ["EventType","EVENTTYPE","EVENT_TYPE","ActivityType","WorkType","TYPE"];
+    for (const c of candidates) if (hasField(layer, c)) return c;
+    const lower = layer.fields?.find(f => f.type === "string" && f.name.toLowerCase().includes("type"));
+    return lower?.name || null;
+  })(featureLayer);
+
+  FIELD = {
+    DistrictName: firstExisting(featureLayer, ["DistrictName","DistrictName"]),
+    forest: firstExisting(featureLayer, ["ForestName","ForestName"]),
+    gush:   firstExisting(featureLayer, ["ForestGushName","GUSH"]),
+    parcel: firstExisting(featureLayer, ["HELKA","Parcel"]),
+    stand:  firstExisting(featureLayer, ["STAND_NO","StandNo"]),
+    area:   firstExisting(featureLayer, ["NET_AREA","AREA","Shape_Area"]),
+    year:   firstExisting(featureLayer, ["year","Year","YEAR"]),
+    type:   eventTypeField,
+    fhp:    firstExisting(featureLayer, ["F_H_P", "FHP", "f_h_p", "fhp"])
+  };
+  
+  // Load forest layer and get its fields
+  await featureForest.load();
+  
+  // Now add forest layer fields after it's loaded
+  FIELD.forestYear = firstExisting(featureForest, ["year","Year","YEAR"]);
+  FIELD.forestFHP = firstExisting(featureForest, ["F_H_P", "FHP", "f_h_p", "fhp"]);
+  
+  // Debug: Log the detected fields
+  console.log("Detected F_H_P fields:", {
+    events: FIELD.fhp,
+    forest: FIELD.forestFHP
+  });
+  console.log("Forest layer fields:", featureForest.fields.map(f => f.name));
+}
+
+
+function buildForestWhere() {
+  const parts = [];
+  const filters = getActiveFilters();
+  
+  // CRITICAL: Filter forest by year field
+  const forestYearField = firstExisting(featureForest, ["year", "Year", "YEAR"]);
+  
+  if (forestYearField) {
+    // Check for year range from selects first
+    const yr = getYearRangeFromSelects();
+    if (yr) {
+      parts.push(`${forestYearField} >= ${yr.startY} AND ${forestYearField} <= ${yr.endY}`);
+    } 
+    // Otherwise use TimeSlider extent
+    else if (currentTimeExtent) {
+      const startYear = currentTimeExtent.start.getFullYear();
+      const endYear = currentTimeExtent.end.getFullYear();
+      parts.push(`${forestYearField} >= ${startYear} AND ${forestYearField} <= ${endYear}`);
+    }
+  }
+  
+  // Add other filters matching the events layer
+  const forestFields = {
+    DistrictName: firstExisting(featureForest, ["DistrictName", "DISTRICT_NAME"]),
+    region: firstExisting(featureForest, ["RegionName", "REGION"]),
+    gush: firstExisting(featureForest, ["ForestGushName", "GUSH"]),
+    forest: firstExisting(featureForest, ["ForestName", "FOREST"]),
+    parcel: firstExisting(featureForest, ["HELKA", "Parcel"]),
+    stand: firstExisting(featureForest, ["STAND_NO", "StandNo"])
+  };
+  
+  // השתמש בפונקציה החדשה
+  [
+    formatSqlFilter(featureForest, forestFields.DistrictName, filters.DistrictName),
+    formatSqlFilter(featureForest, forestFields.region, filters.region),
+    formatSqlFilter(featureForest, forestFields.gush, filters.gush),
+    formatSqlFilter(featureForest, forestFields.forest, filters.forest),
+    formatSqlFilter(featureForest, forestFields.parcel, filters.parcel), // <-- מתוקן
+    formatSqlFilter(featureForest, forestFields.stand, filters.stand)    // <-- מתוקן
+  ].forEach(part => {
+    if (part) parts.push(part);
+  });
+  
+  // Return the WHERE clause
+  return parts.length > 0 ? parts.join(" AND ") : "1=1";
+}
+
+
+const FILTER_ORDER = [
+  { id: "DistrictName", fieldKey: "DistrictName" }, // מרחב
+  { id: "region",       fieldKey: "region"       }, // אזור
+  { id: "gush",         fieldKey: "gush"         }, // גוש
+  { id: "forest",       fieldKey: "forest"       }, // יער
+  { id: "parcel",       fieldKey: "parcel"       }, // חלקה
+  { id: "stand",        fieldKey: "stand"        }  // עומד
+];
+
+// Build a WHERE that includes: active event-type, year range/time slider,
+// and only the filters ABOVE a given index (so each dropdown reflects higher choices).
+
+
+function buildWhereForCascading(uptoIndexExclusive) {
+  const parts = ["1=1"];
+
+  // Event type card
+  if (activeEventType?.field && activeEventType?.value) {
+    // השתמש בפונקציה החדשה
+    const part = formatSqlFilter(featureLayer, activeEventType.field, activeEventType.value);
+    if (part) parts.push(part);
+  }
+
+  // Year range / time slider
+  if (FIELD.year) {
+    const yr = getYearRangeFromSelects();
+    if (yr) {
+      parts.push(`(${FIELD.year} >= ${yr.startY} AND ${FIELD.year} <= ${yr.endY})`);
+    } else if (currentTimeExtent) {
+      const sy = currentTimeExtent.start.getFullYear();
+      const ey = currentTimeExtent.end.getFullYear();
+      parts.push(`(${FIELD.year} >= ${sy} AND ${FIELD.year} <= ${ey})`);
+    }
+  }
+
+  const filters = getActiveFilters();
+  for (let i = 0; i < Math.min(uptoIndexExclusive, FILTER_ORDER.length); i++) {
+    const { id, fieldKey } = FILTER_ORDER[i];
+    const fName = FIELD[fieldKey];
+    const val   = filters[id];
+    
+    // השתמש בפונקציה החדשה
+    const part = formatSqlFilter(featureLayer, fName, val);
+    if (part) parts.push(part);
+  }
+  return parts.join(" AND ");
+}
+
+// Query distinct values for one field, under a given WHERE
+async function queryDistinctValues(fieldName, where) {
+  if (!fieldName) return [];
+  const q = await featureLayer.queryFeatures({
+    where,
+    outFields: [fieldName],
+    returnGeometry: false,
+    returnDistinctValues: true,
+    orderByFields: [fieldName]
+  });
+  return (q.features || [])
+    .map(f => f.attributes[fieldName])
+    .filter(v => v != null && v !== "" && v !== "null" && v !== "undefined");
+}
+
+function setSelectOptions(selectId, values) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const old = sel.value || "";
+  while (sel.options.length > 1) sel.remove(1);
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  if (old && values.includes(old)) sel.value = old; else sel.value = "";
+}
+
+async function rebuildCascadingFrom(startIndex = 0) {
+  for (let i = startIndex; i < FILTER_ORDER.length; i++) {
+    const { id, fieldKey } = FILTER_ORDER[i];
+    const where = buildWhereForCascading(i); 
+    const values = await queryDistinctValues(FIELD[fieldKey], where);
+    setSelectOptions(id, values);
+  }
+}
+
+function clearBelow(startIndex) {
+  for (let i = startIndex + 1; i < FILTER_ORDER.length; i++) {
+    const sel = document.getElementById(FILTER_ORDER[i].id);
+    if (sel) sel.value = "";
+  }
+}
+
+FILTER_ORDER.forEach(({ id }, idx) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', async () => {
+    forestLayerManuallyToggled = false;
+    clearBelow(idx);
+    await rebuildCascadingFrom(idx + 1);
+    debouncedApply(); 
+  });
+});
+
+async function rebuildAllFilters() {
+  await rebuildCascadingFrom(0);
+}
+
+async function populateFiltersServer() {
+  FIELD.region = firstExisting(featureLayer, ["RegionName","REGION"]);
+  await rebuildAllFilters();
+}
+
+const _origUpdateEventTypeCountsServer = updateEventTypeCountsServer;
+updateEventTypeCountsServer = async function(baseWhere) {
+  await _origUpdateEventTypeCountsServer(baseWhere);
+  // await rebuildAllFilters();
+};
+
+const _origOnYearSelectChange = onYearSelectChange;
+onYearSelectChange = function() {
+  _origOnYearSelectChange();
+  rebuildAllFilters();
+};
+
+const _origInitializeTimeSlider = initializeTimeSlider;
+initializeTimeSlider = async function() {
+  await _origInitializeTimeSlider();
+  if (timeSlider) {
+    timeSlider.watch("timeExtent", debounce(async () => {
+      // await rebuildAllFilters();
+    }, 250));
+  }
+};
+
+
+function sqlEscape(v){ return String(v).replace(/'/g,"''"); }
+function sqlList(values){
+  return values.map(v => `'${sqlEscape(v)}'`).join(",");
+}
+
+
+function buildWhere() {
+  const f = getActiveFilters();
+  const parts = ["1=1"];
+
+  if (activeEventType?.field && activeEventType?.value) {
+    // השתמש בפונקציה החדשה, והעבר את השכבה
+    const part = formatSqlFilter(featureLayer, activeEventType.field, activeEventType.value);
+    if (part) parts.push(part);
+  }
+
+  // דרך נקייה להוסיף את כל הפילטרים
+  [
+    formatSqlFilter(featureLayer, FIELD.DistrictName, f.DistrictName),
+    formatSqlFilter(featureLayer, FIELD.region, f.region),
+    formatSqlFilter(featureLayer, FIELD.forest, f.forest),
+    formatSqlFilter(featureLayer, FIELD.gush, f.gush),
+    formatSqlFilter(featureLayer, FIELD.parcel, f.parcel), // <-- מתוקן
+    formatSqlFilter(featureLayer, FIELD.stand, f.stand)    // <-- מתוקן
+  ].forEach(part => {
+    if (part) parts.push(part); // הוסף רק אם הפילטר תקין
+  });
+
+  // לוגיקת השנים נשארת כרגיל
+  if (FIELD.year) {
+    const yr = getYearRangeFromSelects();
+    if (yr) {
+      parts.push(`(${FIELD.year} >= ${yr.startY} AND ${FIELD.year} <= ${yr.endY})`);
+    } else if (currentTimeExtent) {
+      const startYear = currentTimeExtent.start.getFullYear();
+      const endYear   = currentTimeExtent.end.getFullYear();
+      parts.push(`(${FIELD.year} >= ${startYear} AND ${FIELD.year} <= ${endYear})`);
+    }
+  }
+
+  return parts.join(" AND ");
+}
+
+
+async function refreshForestVisibility(where) {
+  // const baseForestExpr = "UPDATE_CODE_NAME <> 'נמחק' OR UPDATE_CODE_NAME IS NULL";
+  const baseForestExpr = "1=1";
+  const chk = document.getElementById('forestLayerToggle');
+
+  const res = await featureLayer.queryFeatures({
+    where,
+    outFields: [FIELD.forest],
+    returnGeometry: false,
+    returnDistinctValues: true,
+    orderByFields: [FIELD.forest]
+  });
+
+  const names = (res.features || [])
+    .map(f => f.attributes[FIELD.forest])
+    .filter(v => v != null && v !== "" && v !== "null" && v !== "undefined");
+
+}
+
+async function applyFilters(opts = {}) {
+  const { skipExtent = false, skipRebuild = false } = opts;
+  const where = buildWhere();
+  
+  // Update events layer
+  featureLayer.definitionExpression = where;
+  
+  // Update forest layer with ALL filters
+  const forestWhere = buildForestWhere();
+  featureForest.definitionExpression = forestWhere;
+
+  if (!skipExtent) {
+    try {
+      const ext = await featureLayer.queryExtent({ where });
+      if (ext.count > 0 && ext.extent) {
+        const newJSON = JSON.stringify(ext.extent.toJSON());
+        if (newJSON !== lastExtentJSON) {
+          lastExtentJSON = newJSON;
+          await view.goTo(ext.extent.expand(1.05), { animate: false });
+        }
+      }
+    } catch (e) {
+      console.warn("queryExtent failed", e);
+    }
+  }
+
+const outFields = ["OBJECTID", FIELD.DistrictName, FIELD.region, FIELD.forest, FIELD.gush, FIELD.parcel, FIELD.stand, FIELD.area, FIELD.year, FIELD.type, FIELD.fhp]
+    .filter(Boolean);
+  const result = await featureLayer.queryFeatures({ where, returnGeometry: false, outFields });
+
+  updateInfoTable(result.features, FIELD);
+  updateSummary(result.features, FIELD);
+
+  const panel = document.getElementById('infoPanel');
+  if (panel) panel.style.display = result.features.length ? 'block' : 'none';
+
+  await updateEventTypeCountsServer(where);
+  
+  // Only rebuild cascading filters if not skipped
+  // if (!skipRebuild) {
+  //   await rebuildAllFilters();
+  // }
+}
+
+// Track current view level: 'main' (10 cards), 'sub' (5 cards), or 'dynamic' (from feature layer)
+let currentEventViewLevel = 'main';
+
+// Initialize main categories (10 cards)
+async function initializeMainCategories() {
+  const container = document.getElementById('eventTypesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  currentEventViewLevel = 'main';
+
+  const mainCategories = [
+    'תשתיות והנדסה',
+    'ניהול מבקרים',
+    'מחקרים',
+    'מרעה',
+    'פיקוח',
+    'תכניות יער וממשק',
+    'אירועי פרצלציה',
+    'סקרים',
+    'טיפולים ביער',
+    'הקמת יער'
+  ];
+
+  mainCategories.forEach(categoryName => {
+    const card = document.createElement('div');
+    card.className = 'event-type-card';
+    card.innerHTML = `<div class="event-type-name">${categoryName}</div>`;
+    card.onclick = () => {
+      if (categoryName === 'אירועי פרצלציה') {
+        // Navigate to dynamic event types
+        initializeDynamicEventTypes();
+      } else {
+        // Show "in progress" message
+        alert('בתהליך פיתוח');
+      }
+    };
+    container.appendChild(card);
+  });
+}
+
+// Initialize sub categories (5 cards - shown after back button)
+async function initializeSubCategories() {
+  const container = document.getElementById('eventTypesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  currentEventViewLevel = 'sub';
+
+  const subCategories = [
+    'תשתיות והנדסה',
+    'ניהול מבקרים',
+    'מחקרים',
+    'מרעה',
+    'פיקוח',
+    'תכניות יער וממשק',
+    'אירועי פרצלציה',
+    'סקרים',
+    'טיפולים ביער',
+    'הקמת יער'
+  ];
+
+  subCategories.forEach(categoryName => {
+    const card = document.createElement('div');
+    card.className = 'event-type-card';
+    card.innerHTML = `<div class="event-type-name">${categoryName}</div>`;
+    card.onclick = () => {
+      if (categoryName === 'אירועי פרצלציה') {
+        // Navigate to dynamic event types
+        initializeDynamicEventTypes();
+      } else {
+        // Show "in progress" message
+        alert('בתהליך פיתוח');
+      }
+    };
+    container.appendChild(card);
+  });
+}
+
+// Initialize dynamic event types (from feature layer)
+async function initializeDynamicEventTypes() {
+  if (!FIELD.type) {
+    const ctr = document.getElementById('eventTypesContainer');
+    if (ctr) ctr.innerHTML = '<div style="padding: 20px; color:#ccc;">אין שדה סוג אירוע</div>';
+    return;
+  }
+
+  const stats = await featureLayer.queryFeatures({
+    where: "1=1",
+    returnGeometry: false,
+    groupByFieldsForStatistics: [FIELD.type],
+    outStatistics: [{ statisticType: "count", onStatisticField: "1", outStatisticFieldName: "cnt" }]
+  });
+
+  const container = document.getElementById('eventTypesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  currentEventViewLevel = 'dynamic';
+
+  // Add back button
+  const backButton = document.createElement('button');
+  backButton.className = 'event-type-card';
+  backButton.style.background = '#6c757d';
+  backButton.style.minWidth = '100px';
+  backButton.innerHTML = `<div class="event-type-name">← חזרה</div>`;
+  backButton.onclick = () => {
+    // Clear active event type filter when going back
+    activeEventType = null;
+    const t = document.getElementById('infoPanelTitle'); if (t) t.textContent = 'כל הפעילויות';
+    initializeSubCategories();
+  };
+  container.appendChild(backButton);
+
+  const rows = (stats.features || [])
+    .map(f => ({ name: String(f.attributes[FIELD.type]), value: f.attributes[FIELD.type], count: f.attributes.cnt }))
+    .filter(e => e.value != null && e.name !== "null" && e.name !== "undefined");
+
+  const total = rows.reduce((s, r) => s + (r.count || 0), 0);
+
+  const allCard = document.createElement('div');
+  allCard.className = 'event-type-card';
+  allCard.style.background = '#2d6a4f';
+  allCard.innerHTML = `<div class="event-count">${total}</div><div class="event-type-name">הכל</div>`;
+  allCard.onclick = () => {
+    document.querySelectorAll('.event-type-card').forEach(c => c.classList.remove('active'));
+    allCard.classList.add('active');
+    activeEventType = null;
+    const t = document.getElementById('infoPanelTitle'); if (t) t.textContent = 'כל הפעילויות';
+    const panel = document.getElementById('infoPanel');  if (panel) panel.style.display = 'block';
+    applyFilters();
+  };
+  container.appendChild(allCard);
+
+  rows.forEach(et => {
+    const card = document.createElement('div');
+    card.className = 'event-type-card';
+    card.innerHTML = `<div class="event-count">${et.count}</div><div class="event-type-name">${et.name}</div>`;
+    card.onclick = () => {
+      const isActive = card.classList.contains('active');
+      document.querySelectorAll('.event-type-card').forEach(c => c.classList.remove('active'));
+      if (isActive) {
+        allCard.classList.add('active'); activeEventType = null;
+        const t = document.getElementById('infoPanelTitle'); if (t) t.textContent = 'כל הפעילויות';
+      } else {
+        card.classList.add('active');
+        activeEventType = { field: FIELD.type, value: et.value, name: et.name };
+        const t = document.getElementById('infoPanelTitle'); if (t) t.textContent = `${et.name} - סיכום פעילות`;
+      }
+      const panel = document.getElementById('infoPanel');  if (panel) panel.style.display = 'block';
+      applyFilters();
+    };
+    container.appendChild(card);
+  });
+
+  allCard.classList.add('active');
+}
+
+// Main initialization function - starts with main categories
+async function initializeEventTypes() {
+  await initializeMainCategories();
+}
+
+async function updateEventTypeCountsServer(baseWhere) {
+  // Only update counts when in dynamic view
+  if (currentEventViewLevel !== 'dynamic') return;
+  if (!FIELD.type) return;
+
+  let stats;
+  try {
+    stats = await featureLayer.queryFeatures({
+      where: baseWhere,
+      returnGeometry: false,
+      groupByFieldsForStatistics: [FIELD.type],
+      outStatistics: [{ statisticType: "count", onStatisticField: "1", outStatisticFieldName: "cnt" }]
+    });
+  } catch (e) {
+    console.warn("updateEventTypeCountsServer stats query failed", e);
+    return;
+  }
+
+  const features = Array.isArray(stats.features) ? stats.features : [];
+
+  const counts = Object.create(null);
+  let total = 0;
+  for (const f of features) {
+    const val = f?.attributes?.[FIELD.type];
+    const cnt = Number(f?.attributes?.cnt) || 0;
+    if (val != null) {
+      counts[String(val)] = (counts[String(val)] || 0) + cnt;
+      total += cnt;
+    }
+  }
+
+  const cards = document.querySelectorAll('.event-type-card');
+
+  // Skip the back button (first card in dynamic view)
+  if (cards[1]) {
+    const allCountEl = cards[1].querySelector('.event-count');
+    if (allCountEl) allCountEl.textContent = String(total);
+  }
+
+  for (let i = 2; i < cards.length; i++) {
+    const name = cards[i].querySelector('.event-type-name')?.textContent ?? "";
+    const count = counts[name] || 0;
+    const el = cards[i].querySelector('.event-count');
+    if (el) el.textContent = String(count);
+  }
+}
+
+
+async function initializeTimeSlider() {
+  if (!FIELD.year) {
+    const c = document.querySelector('.time-slider-container');
+    if (c) c.style.display = 'none';
+    return;
+  }
+
+  const outStats = [
+    { statisticType: "min", onStatisticField: FIELD.year, outStatisticFieldName: "minYear" },
+    { statisticType: "max", onStatisticField: FIELD.year, outStatisticFieldName: "maxYear" }
+  ];
+
+  let minDate = null, maxDate = null;
+  try {
+    const res = await featureLayer.queryFeatures({ 
+      where: "1=1", 
+      returnGeometry: false, 
+      outStatistics: outStats 
+    });
+    const a = res.features?.[0]?.attributes || {};
+    minYearGlobal = a.minYear ?? null;
+    maxYearGlobal = a.maxYear ?? null;
+
+    if (minYearGlobal && maxYearGlobal) {
+      // מלא את הרשימות העליונות
+      populateYearSelects(minYearGlobal, maxYearGlobal);
+
+      minDate = new Date(minYearGlobal, 0, 1);
+      maxDate = new Date(maxYearGlobal, 11, 31);
+    }
+  } catch (e) {
+    console.warn("year stats failed", e);
+  }
+
+  if (!minDate || !maxDate || isNaN(minDate) || isNaN(maxDate)) {
+    const c = document.querySelector('.time-slider-container');
+    if (c) c.style.display = 'none';
+    return;
+  }
+
+  timeSlider = new TimeSlider({
+    container: "timeSlider",
+    view,
+    mode: "time-window",
+    timeVisible: false,
+    labelFormatFunction: (value, type, element) => {
+      const d = value instanceof Date ? value : new Date(value);
+      if (isNaN(d)) { 
+        element.textContent = ""; 
+        return; 
+      }
+      element.textContent = d.getFullYear().toString();
+    },
+    fullTimeExtent: { start: minDate, end: maxDate },
+    stops: { interval: { value: 1, unit: "years" } }, 
+    playRate: 2000
+  });
+
+  timeSlider.timeExtent = { start: minDate, end: maxDate };
+  const datesEl = document.getElementById('timeSliderDates');
+  if (datesEl) {
+    datesEl.textContent = `${maxDate.getFullYear()} - ${minDate.getFullYear()}`;
+  }
+
+timeSlider.watch("timeExtent", (value) => {
+  currentTimeExtent = value;
+  const datesEl = document.getElementById('timeSliderDates');
+  if (datesEl) {
+    datesEl.textContent = `${value.end.getFullYear()} - ${value.start.getFullYear()}`;
+  }
+
+  const yFrom = document.getElementById('yearFrom');
+  const yTo = document.getElementById('yearTo');
+  if (yFrom && yTo) {
+    const sy = value.start.getFullYear();
+    const ey = value.end.getFullYear();
+    yFrom.value = (minYearGlobal != null && sy === Number(minYearGlobal)) ? "" : String(sy);
+    yTo.value = (maxYearGlobal != null && ey === Number(maxYearGlobal)) ? "" : String(ey);
+  }
+
+  // Update BOTH layers with the time filter
+  const eventsWhere = buildWhere();
+  const forestWhere = buildForestWhere();
+  
+  featureLayer.definitionExpression = eventsWhere;
+  featureForest.definitionExpression = forestWhere;
+  
+  // Log for debugging
+  console.log("Forest layer WHERE:", forestWhere);
+  
+  // Continue with other updates
+  applyFilters({ skipExtent: true, skipRebuild: true });
+});
+};
+
+
+
+    function toEsriTimestampLiteral(ms) {
+  const d = new Date(ms);
+  const Y = d.getUTCFullYear();
+  const M = '1'
+  const D = '1'
+  const hh = '1'
+  const mm = '1'
+  const ss = '1'
+  return `TIMESTAMP '${Y}-${M}-${D} ${hh}:${mm}:${ss}'`;
+}
+
+
+
+
+// Global variables for table sorting and filtering
+let currentTableFeatures = [];
+let currentTableFIELD = null;
+let currentSortColumn = null;
+let currentSortDirection = null;
+let columnFilters = {}; // Store selected filters for each column
+let activeDropdown = null;
+
+// Initialize table header event listeners for sorting
+function initializeTableSorting() {
+  const headers = document.querySelectorAll('.sortable-header');
+  headers.forEach(header => {
+    header.addEventListener('dblclick', function() {
+      const column = this.getAttribute('data-column');
+      sortTable(column);
+    });
+  });
+}
+
+// Sort table by column
+function sortTable(column) {
+  if (!currentTableFeatures.length || !currentTableFIELD) return;
+
+  // Determine sort direction
+  if (currentSortColumn === column) {
+    // Toggle between asc, desc, and no sort
+    if (currentSortDirection === 'asc') {
+      currentSortDirection = 'desc';
+    } else if (currentSortDirection === 'desc') {
+      currentSortColumn = null;
+      currentSortDirection = null;
+    } else {
+      currentSortDirection = 'asc';
+    }
+  } else {
+    currentSortColumn = column;
+    currentSortDirection = 'asc';
+  }
+
+  // Update header classes
+  const headers = document.querySelectorAll('.sortable-header');
+  headers.forEach(h => {
+    h.classList.remove('sorted-asc', 'sorted-desc');
+    if (h.getAttribute('data-column') === currentSortColumn) {
+      h.classList.add(currentSortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    }
+  });
+
+  // Sort features
+  let sortedFeatures = [...currentTableFeatures];
+
+  if (currentSortColumn && currentSortDirection) {
+    sortedFeatures.sort((a, b) => {
+      let aVal, bVal;
+      const fieldName = currentTableFIELD[column];
+
+      if (column === 'area') {
+        aVal = fieldName ? Number(a.attributes[fieldName]) : 0;
+        bVal = fieldName ? Number(b.attributes[fieldName]) : 0;
+        aVal = isFinite(aVal) ? aVal : 0;
+        bVal = isFinite(bVal) ? bVal : 0;
+      } else if (column === 'year') {
+        aVal = fieldName ? a.attributes[fieldName] : null;
+        bVal = fieldName ? b.attributes[fieldName] : null;
+        // Handle dates
+        if (aVal instanceof Date && bVal instanceof Date) {
+          aVal = aVal.getTime();
+          bVal = bVal.getTime();
+        } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+          // Already numbers (timestamps)
+        } else {
+          aVal = aVal ? String(aVal) : '';
+          bVal = bVal ? String(bVal) : '';
+        }
+      } else {
+        aVal = fieldName ? (a.attributes[fieldName] ?? '') : '';
+        bVal = fieldName ? (b.attributes[fieldName] ?? '') : '';
+        aVal = String(aVal);
+        bVal = String(bVal);
+      }
+
+      // Compare values
+      if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // Apply filters and re-render
+  applyFiltersAndRender(sortedFeatures);
+}
+
+// Initialize filter icon listeners
+function initializeTableFiltering() {
+  const filterIcons = document.querySelectorAll('.filter-icon');
+  filterIcons.forEach(icon => {
+    icon.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent triggering header click
+      const column = this.getAttribute('data-column');
+      toggleFilterDropdown(column, this);
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (activeDropdown && !e.target.closest('.filter-dropdown') && !e.target.closest('.filter-icon')) {
+      closeFilterDropdown();
+    }
+  });
+}
+
+// Get unique values for a column
+function getUniqueColumnValues(column, features, FIELD) {
+  if (!features.length || !FIELD) return [];
+
+  const fieldName = FIELD[column];
+  if (!fieldName) return [];
+
+  const uniqueValues = new Set();
+
+  features.forEach(f => {
+    const a = f.attributes;
+    let value;
+
+    if (column === 'area') {
+      const v = Number(a[fieldName]);
+      value = isFinite(v) ? v.toFixed(1) : '-';
+    } else if (column === 'year') {
+      value = formatDateShort(a[fieldName]);
+    } else {
+      value = a[fieldName] ?? '-';
+    }
+
+    uniqueValues.add(String(value));
+  });
+
+  return Array.from(uniqueValues).sort();
+}
+
+// Toggle filter dropdown
+function toggleFilterDropdown(column, icon) {
+  // Close existing dropdown
+  if (activeDropdown) {
+    closeFilterDropdown();
+  }
+
+  // If clicking the same icon, just close
+  if (activeDropdown === column) {
+    activeDropdown = null;
+    return;
+  }
+
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'filter-dropdown show';
+  dropdown.id = 'active-filter-dropdown';
+
+  // Get unique values
+  const uniqueValues = getUniqueColumnValues(column, currentTableFeatures, currentTableFIELD);
+
+  if (!uniqueValues.length) {
+    dropdown.innerHTML = '<div class="filter-option">אין ערכים זמינים</div>';
+  } else {
+    // Add "Select All" option
+    const allChecked = !columnFilters[column] || columnFilters[column].length === 0;
+    dropdown.innerHTML = `
+      <div class="filter-option all-option" data-value="all">
+        <input type="checkbox" ${allChecked ? 'checked' : ''} id="filter-all-${column}">
+        <label for="filter-all-${column}">(בחר הכל)</label>
+      </div>
+    `;
+
+    // Add individual options
+    uniqueValues.forEach(value => {
+      const isChecked = !columnFilters[column] || columnFilters[column].length === 0 || columnFilters[column].includes(value);
+      const optionId = `filter-${column}-${value.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+      const option = document.createElement('div');
+      option.className = 'filter-option';
+      option.innerHTML = `
+        <input type="checkbox" ${isChecked ? 'checked' : ''} id="${optionId}" data-value="${value}">
+        <label for="${optionId}">${value}</label>
+      `;
+      dropdown.appendChild(option);
+    });
+
+    // Add clear filters button
+    if (columnFilters[column] && columnFilters[column].length > 0) {
+      const clearBtn = document.createElement('div');
+      clearBtn.className = 'filter-clear-btn';
+      clearBtn.textContent = 'נקה סינון';
+      clearBtn.onclick = () => {
+        delete columnFilters[column];
+        updateFilterIcon(column);
+        closeFilterDropdown();
+        applyFiltersAndRender();
+      };
+      dropdown.appendChild(clearBtn);
+    }
+
+    // Handle checkbox changes
+    dropdown.addEventListener('change', function(e) {
+      if (e.target.type === 'checkbox') {
+        handleFilterChange(column, dropdown);
+      }
+    });
+  }
+
+  // Position dropdown relative to the header
+  const th = icon.closest('th');
+  th.style.position = 'relative';
+  th.appendChild(dropdown);
+
+  activeDropdown = column;
+}
+
+// Handle filter checkbox changes
+function handleFilterChange(column, dropdown) {
+  const allCheckbox = dropdown.querySelector('[data-value="all"]');
+  const valueCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]:not([data-value="all"])');
+
+  if (allCheckbox && allCheckbox.checked) {
+    allCheckbox.checked = false;
+    valueCheckboxes.forEach(cb => cb.checked = true);
+  }
+
+  const selectedValues = Array.from(valueCheckboxes)
+    .filter(cb => cb.checked)
+    .map(cb => cb.getAttribute('data-value'));
+
+  if (selectedValues.length === valueCheckboxes.length) {
+    delete columnFilters[column];
+  } else if (selectedValues.length === 0) {
+    columnFilters[column] = [];
+  } else {
+    columnFilters[column] = selectedValues;
+  }
+
+  updateFilterIcon(column);
+
+  applyFiltersAndRender();
+}
+
+function updateFilterIcon(column) {
+  const icon = document.querySelector(`.filter-icon[data-column="${column}"]`);
+  if (icon) {
+    if (columnFilters[column] && columnFilters[column].length > 0) {
+      icon.classList.add('active');
+    } else {
+      icon.classList.remove('active');
+    }
+  }
+}
+
+function closeFilterDropdown() {
+  const dropdown = document.getElementById('active-filter-dropdown');
+  if (dropdown) {
+    dropdown.remove();
+  }
+  activeDropdown = null;
+}
+
+
+
+
+function applyFiltersAndRender(features = null) {
+  const featuresToFilter = features || currentTableFeatures;
+
+  let filteredFeatures = featuresToFilter.filter(feature => {
+    for (const column in columnFilters) {
+      const filterValues = columnFilters[column];
+      if (filterValues.length === 0) return false; 
+
+      const fieldName = currentTableFIELD[column];
+      if (!fieldName) continue;
+
+      const a = feature.attributes;
+      let value;
+
+      if (column === 'area') {
+        const v = Number(a[fieldName]);
+        value = isFinite(v) ? v.toFixed(1) : '-';
+      } else if (column === 'year') {
+        value = formatDateShort(a[fieldName]);
+      } else {
+        value = a[fieldName] ?? '-';
+      }
+
+      if (!filterValues.includes(String(value))) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  renderInfoTable(filteredFeatures, currentTableFIELD);
+  updateSummary(filteredFeatures, currentTableFIELD);
+}
+
+
+
+
+
+function renderInfoTable(features, FIELD) {
+  const tbody = document.getElementById('infoTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (typeof window.currentForestSearchToken === 'undefined') {
+    window.currentForestSearchToken = 0;
+  }
+
+  if (!window.forestSearchCache) {
+    window.forestSearchCache = {};
+  }
+
+  if (!features.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">אין נתונים להצגה</td></tr>';
+    updateSummary([], FIELD);
+    return;
+  }
+
+  // popup
+  let popup = document.getElementById('yearSearchPopup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'yearSearchPopup';
+    popup.style.cssText = `
+      position: fixed;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, 0.9);
+      color: white;
+      padding: 14px 22px;
+      border-radius: 999px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+      z-index: 10000;
+      display: none;
+      min-width: 220px;
+      text-align: center;
+      font-size: 14px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.25s ease;
+    `;
+    popup.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="font-size:11px;opacity:0.75;">חיפוש שכבת יער לפי שנה</div>
+        <div id="yearSearchValue" style="font-size:26px;font-weight:700;letter-spacing:1px;"></div>
+        <div id="yearSearchStatus" style="font-size:11px;opacity:0.8;"></div>
+      </div>
+    `;
+    document.body.appendChild(popup);
+
+    const style = document.createElement('style');
+    style.textContent = `
+      #yearSearchPopup { pointer-events: none; }
+
+      @keyframes fadeOut {
+        0%   { opacity: 1; transform: translateY(0); }
+        70%  { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-12px); }
+      }
+      .fade-out-animation {
+        animation: fadeOut 1.4s ease forwards;
+      }
+
+      .selected-row {
+        background-color: rgba(37, 99, 235, 0.08) !important;
+      }
+      .selected-row td {
+        border-bottom-color: rgba(37, 99, 235, 0.25);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const yearDisplay   = popup.querySelector('#yearSearchValue');
+  const statusDisplay = popup.querySelector('#yearSearchStatus');
+
+  const hidePopup = () => {
+    popup.classList.add('fade-out-animation');
+    setTimeout(() => {
+      popup.style.display = 'none';
+      popup.style.background = 'rgba(17, 24, 39, 0.9)';
+      popup.classList.remove('fade-out-animation');
+    }, 1400);
+  };
+
+  const normalizeYear = (val) => {
+    if (val instanceof Date) return val.getFullYear();
+    if (typeof val === 'number') {
+      if (val > 10000) return new Date(val).getFullYear();
+      return val;
+    }
+    if (typeof val === 'string') {
+      const m = val.match(/(\d{4})/);
+      if (m) return Number(m[1]);
+    }
+    return null;
+  };
+
+  const getForestLayerView = async () => {
+    if (window.forestLayerView) return window.forestLayerView;
+    const lv = await view.whenLayerView(featureForest);
+    window.forestLayerView = lv;
+    return lv;
+  };
+
+  // important: wait until layerView is ready before highlight
+  const waitForLayerViewReady = async (layerView, maxWait = 5000) => {
+    const start = Date.now();
+    while (layerView.updating && (Date.now() - start) < maxWait) {
+      await new Promise(r => setTimeout(r, 80));
+    }
+  };
+
+  features.forEach(f => {
+    const a  = f.attributes;
+    const tr = document.createElement('tr');
+    tr.className = 'clickable-row';
+    tr.setAttribute('data-oid', a.OBJECTID);
+
+    const stand  = FIELD.stand  ? (a[FIELD.stand]  ?? '-') : '-';
+    const parcel = FIELD.parcel ? (a[FIELD.parcel] ?? '-') : '-';
+    const gush   = FIELD.gush   ? (a[FIELD.gush]   ?? '-') : '-';
+    const forest = FIELD.forest ? (a[FIELD.forest] ?? '-') : '-';
+    let area = '-';
+    if (FIELD.area) {
+      const v = Number(a[FIELD.area]);
+      area = isFinite(v) ? v.toFixed(1) : '-';
+    }
+
+    const yearText = FIELD.year ? formatDateShort(a[FIELD.year]) : '-';
+    const et       = FIELD.type ? (a[FIELD.type] ?? '-') : '-';
+
+    tr.innerHTML = `
+      <td class="highlight-number">${gush}</td>
+      <td>${forest}</td>
+      <td>${parcel}</td>
+      <td class="highlight-number">${stand}</td>
+      <td>${area}</td>
+      <td>${yearText}</td>
+      <td>${et}</td>
+    `;
+
+    tr.onclick = async () => {
+      const panel = document.getElementById('infoPanel');
+      if (panel) panel.style.display = 'block';
+
+      const allRows = tbody.querySelectorAll('.clickable-row');
+      const alreadySelected = tr.dataset.selected === 'true';
+
+      // deselect all rows (including this one)
+      allRows.forEach(row => {
+        row.dataset.selected = 'false';
+        row.classList.remove('selected-row');
+      });
+
+      // if row was already selected -> this click is "unselect"
+      if (alreadySelected) {
+        if (window.forestHighlight) {
+          window.forestHighlight.remove();
+          window.forestHighlight = null;
+        }
+        popup.style.display = 'none';
+        popup.classList.remove('fade-out-animation');
+        return; // nothing more to do
+      }
+
+      // from here: NEW selection
+      // bump token only for a new search
+      window.currentForestSearchToken += 1;
+      const myToken = window.currentForestSearchToken;
+
+      const stillMyTurn = () =>
+        myToken === window.currentForestSearchToken;
+
+      // mark this row as selected
+      tr.dataset.selected = 'true';
+      tr.classList.add('selected-row');
+
+      // clear previous highlight (from other row)
+      if (window.forestHighlight) {
+        window.forestHighlight.remove();
+        window.forestHighlight = null;
+      }
+
+      // zoom to stand point - wait for zoom to complete before checking polygon
+      await zoomToFeatureById(a.OBJECTID);
+
+      if (!(FIELD.fhp && FIELD.year && FIELD.forestFHP && FIELD.forestYear)) {
+        console.log('Missing required fields for forest highlighting');
+        return;
+      }
+
+      const fhpValue  = a[FIELD.fhp];
+      const yearValue = a[FIELD.year];
+      if (!fhpValue || !yearValue) return;
+
+      let originalYear = normalizeYear(yearValue);
+      if (!originalYear) return;
+
+      const cacheKey = `${String(fhpValue).trim()}__${originalYear}`;
+
+      // popup base state
+      popup.style.display = 'block';
+      popup.classList.remove('fade-out-animation');
+      popup.style.background = 'rgba(17, 24, 39, 0.9)';
+      yearDisplay.textContent = originalYear;
+      statusDisplay.textContent = '';
+
+      const forestLayerView = await getForestLayerView();
+
+      // 1) try cache first
+      const cachedObjectIds = window.forestSearchCache[cacheKey];
+      if (Array.isArray(cachedObjectIds) && cachedObjectIds.length > 0) {
+        try {
+          await waitForLayerViewReady(forestLayerView);
+          await new Promise(r => setTimeout(r, 120));
+          if (!stillMyTurn()) return;
+
+          window.forestHighlight = forestLayerView.highlight(cachedObjectIds);
+
+          popup.style.background = 'rgba(82, 183, 136, 0.95)';
+          yearDisplay.textContent = `✓ ${originalYear}`;
+          statusDisplay.textContent = `נמצא (${cachedObjectIds.length})`;
+          setTimeout(hidePopup, 1200);
+          return;
+        } catch (err) {
+          console.error('highlight from cache failed', err);
+        }
+      }
+
+      const forestFHPField = featureForest.fields?.find(fld => fld.name === FIELD.forestFHP);
+      const isNumericFHP = forestFHPField && [
+        'integer', 'double', 'small-integer', 'big-integer',
+        'single', 'long', 'number', 'oid'
+      ].includes(forestFHPField.type);
+
+      const minYear   = 2007;
+      const startYear = originalYear >= minYear ? originalYear : minYear;
+      let found = false;
+
+      for (let currentYear = startYear; currentYear >= minYear; currentYear--) {
+        if (!stillMyTurn()) {
+          console.log('search stopped, user clicked something else');
+          return;
+        }
+
+        yearDisplay.textContent = currentYear;
+        statusDisplay.textContent = 'מחפש...';
+
+        let whereClause;
+        if (isNumericFHP) {
+          whereClause = `${FIELD.forestFHP} = ${fhpValue} AND ${FIELD.forestYear} = ${currentYear}`;
+        } else {
+          const safeFhp = String(fhpValue).replace(/'/g, "''");
+          whereClause = `${FIELD.forestFHP} = '${safeFhp}' AND ${FIELD.forestYear} = ${currentYear}`;
+        }
+
+        try {
+          const forestQuery = await featureForest.queryFeatures({
+            where: whereClause,
+            returnGeometry: true,
+            outFields: ['*']
+          });
+
+          if (!stillMyTurn()) {
+            console.log('ignore result, user clicked something else');
+            return;
+          }
+
+          if (forestQuery.features.length > 0) {
+            const validFeatures = forestQuery.features.filter(feat => {
+              const fhpAttr  = feat.attributes[FIELD.forestFHP];
+              const yearAttr = normalizeYear(feat.attributes[FIELD.forestYear]);
+              const fhpMatch  = String(fhpAttr).trim() === String(fhpValue).trim();
+              const yearMatch = yearAttr === currentYear;
+              return fhpMatch && yearMatch;
+            });
+
+            if (validFeatures.length > 0) {
+              const objectIds = validFeatures.map(ft => ft.attributes.OBJECTID);
+
+              popup.style.background = 'rgba(82, 183, 136, 0.95)';
+              yearDisplay.textContent = `✓ ${currentYear}`;
+              statusDisplay.textContent = `נמצא (${validFeatures.length})`;
+
+              try {
+                await waitForLayerViewReady(forestLayerView);
+                await new Promise(r => setTimeout(r, 120));
+                if (!stillMyTurn()) return;
+
+                window.forestHighlight = forestLayerView.highlight(objectIds);
+              } catch (err) {
+                console.error('highlight failed', err);
+              }
+
+              found = true;
+
+              // cache for the exact year we found
+              const exactKey = `${String(fhpValue).trim()}__${currentYear}`;
+              window.forestSearchCache[exactKey] = objectIds;
+
+              const displayDuration = currentYear === originalYear ? 1800 : 800;
+              setTimeout(hidePopup, displayDuration);
+              break;
+            }
+          }
+        } catch (e) {
+          console.error(`forest query failed for year ${currentYear}`, e);
+        }
+
+        if (!found && currentYear > minYear) {
+          statusDisplay.textContent = 'לא נמצא, ממשיך שנה אחורה...';
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!found && stillMyTurn()) {
+        yearDisplay.textContent = '✗';
+        statusDisplay.textContent = 'לא נמצא';
+        setTimeout(hidePopup, 700);
+      }
+    };
+
+
+
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function updateInfoTable(features, FIELD) {
+  currentTableFeatures = features;
+  currentTableFIELD = FIELD;
+
+  currentSortColumn = null;
+  currentSortDirection = null;
+
+  columnFilters = {};
+
+  const headers = document.querySelectorAll('.sortable-header');
+  headers.forEach(h => {
+    h.classList.remove('sorted-asc', 'sorted-desc');
+  });
+
+  const filterIcons = document.querySelectorAll('.filter-icon');
+  filterIcons.forEach(icon => {
+    icon.classList.remove('active');
+  });
+
+  if (!window.tableSortingInitialized) {
+    initializeTableSorting();
+    window.tableSortingInitialized = true;
+  }
+
+  if (!window.tableFilteringInitialized) {
+    initializeTableFiltering();
+    window.tableFilteringInitialized = true;
+  }
+
+  renderInfoTable(features, FIELD);
+  updateSummary(features, FIELD);
+}
+
+    function updateSummary(features, FIELD) {
+      const el = document.getElementById('summaryInfo');
+      if (!el) return;
+      if (!features.length) { el.innerHTML = ''; return; }
+
+      let totalArea = 0;
+      const uniqForests = new Set();
+      const uniqParcels = new Set();
+
+      features.forEach(f => {
+        const a = f.attributes;
+        if (FIELD.area) {
+          const v = Number(a[FIELD.area]);
+          if (isFinite(v)) totalArea += v;
+        }
+        if (FIELD.forest && a[FIELD.forest]) uniqForests.add(a[FIELD.forest]);
+        if (FIELD.parcel && a[FIELD.parcel]) uniqParcels.add(a[FIELD.parcel]);
+      });
+
+      el.innerHTML = `
+        <strong>סה"כ רשומות:</strong> ${features.length} |
+        <strong>שטח כולל:</strong> ${totalArea.toFixed(1)} דונם |
+        <strong>יערות:</strong> ${uniqForests.size} |
+        <strong>חלקות:</strong> ${uniqParcels.size}
+      `;
+    }
+
+async function zoomToFeatureById(objectId) {
+  try {
+    const r = await featureLayer.queryFeatures({
+      where: `OBJECTID = ${objectId}`,
+      returnGeometry: true,
+      outFields: ["OBJECTID"]
+    });
+    if (!r.features.length) return;
+    const feat = r.features[0];
+    await view.goTo(feat.geometry, { animate: true, zoom: 16 });
+    const lv = await view.whenLayerView(featureLayer);
+    if (highlightSelect) highlightSelect.remove();
+    highlightSelect = lv.highlight(feat);
+  } catch (e) { console.warn("zoomToFeatureById failed", e); }
+}
+
+    let searchWidget; 
+
+    ['DistrictName','region','forest','gush','parcel','stand'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => { forestLayerManuallyToggled = false; debouncedApply(); });
+    });
+
+    // Add event listeners for year selects to update time slider
+    const yearFromEl = document.getElementById('yearFrom');
+    const yearToEl = document.getElementById('yearTo');
+
+    if (yearFromEl) {
+      yearFromEl.addEventListener('change', () => {
+        onYearSelectChange();
+      });
+    }
+
+    if (yearToEl) {
+      yearToEl.addEventListener('change', () => {
+        onYearSelectChange();
+      });
+    }
+
+    (async function boot() {
+      try {
+        await featureLayer.load();
+        resolveFieldsAfterLoad();
+
+        const searchFields = [FIELD.forest, FIELD.parcel, FIELD.stand].filter(Boolean);
+        searchWidget = new Search({
+          view,
+          sources: [{
+            layer: featureLayer,
+            searchFields,
+            displayField: FIELD.forest || "OBJECTID",
+            exactMatch: false,
+            outFields: ["*"],
+            name: "חיפוש יערות",
+            placeholder: "חפש יער, חלקה או עומד"
+          }],
+          includeDefaultSources: false
+        });
+        view.ui.add(searchWidget, { position: "top-left", index: 0 });
+
+        await view.goTo(featureLayer.fullExtent);
+
+        await populateFiltersServer();
+        await initializeEventTypes();
+        await initializeTimeSlider();
+        await applyFilters();
+      } catch (e) {
+        showError("שגיאה בטעינת הנתונים");
+      } finally {
+        const loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'none';
+      }
+    })();
+
+  });
+</script>
+
+
+
+
