@@ -4013,8 +4013,8 @@ function toggleFilterDropdown(column, icon) {
 
 // Handle filter checkbox changes
 function handleFilterChange(column, dropdown) {
-  const allCheckbox = dropdown.querySelector('[data-value="all"]');
-  const noneCheckbox = dropdown.querySelector('[data-value="none"]');
+  const allCheckbox = dropdown.querySelector('[data-value="all"] input[type="checkbox"]');
+  const noneCheckbox = dropdown.querySelector('[data-value="none"] input[type="checkbox"]');
   const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
 
   // Handle "Select All" click
