@@ -4019,15 +4019,11 @@ function handleFilterChange(column, dropdown) {
 
   // Handle "Select All" click
   if (allCheckbox && allCheckbox.checked) {
-    allCheckbox.checked = false;
-    if (noneCheckbox) noneCheckbox.checked = false;
     valueCheckboxes.forEach(cb => cb.checked = true);
   }
 
   // Handle "Clear All" click
   if (noneCheckbox && noneCheckbox.checked) {
-    noneCheckbox.checked = false;
-    if (allCheckbox) allCheckbox.checked = false;
     valueCheckboxes.forEach(cb => cb.checked = false);
   }
 
@@ -4041,6 +4037,14 @@ function handleFilterChange(column, dropdown) {
     columnFilters[column] = [];
   } else {
     columnFilters[column] = selectedValues;
+  }
+
+  // Update Select All and Clear All checkbox states to reflect current selection
+  if (allCheckbox) {
+    allCheckbox.checked = (selectedValues.length === valueCheckboxes.length);
+  }
+  if (noneCheckbox) {
+    noneCheckbox.checked = (selectedValues.length === 0);
   }
 
   updateFilterIcon(column);
