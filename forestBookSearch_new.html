@@ -543,13 +543,40 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1000;
             min-width: 200px;
-            max-height: 300px;
-            overflow-y: auto;
+            max-height: 350px;
             display: none;
+            overflow: hidden;
         }
 
         .filter-dropdown.show {
-            display: block;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-search-container {
+            padding: 8px;
+            border-bottom: 2px solid #2d6a4f;
+            background: #f9f9f9;
+        }
+
+        .filter-search-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .filter-search-input:focus {
+            outline: none;
+            border-color: #2d6a4f;
+            box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.1);
+        }
+
+        .filter-options-container {
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .filter-option {
@@ -575,6 +602,16 @@
             border-bottom: 2px solid #2d6a4f;
         }
 
+        .filter-option.clear-all-option {
+            font-weight: bold;
+            background: #fff3e0;
+            border-bottom: 2px solid #ff9800;
+        }
+
+        .filter-option.hidden {
+            display: none;
+        }
+
         .filter-clear-btn {
             padding: 8px 12px;
             background: #f44336;
@@ -587,6 +624,21 @@
 
         .filter-clear-btn:hover {
             background: #d32f2f;
+        }
+
+        .filter-actions-row {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .filter-actions-row .filter-option {
+            flex: 1;
+            border-bottom: none;
+            border-right: 1px solid #ddd;
+        }
+
+        .filter-actions-row .filter-option:last-child {
+            border-right: none;
         }
 
         .time-slider-container {
@@ -3862,14 +3914,36 @@ function toggleFilterDropdown(column, icon) {
   if (!uniqueValues.length) {
     dropdown.innerHTML = '<div class="filter-option">אין ערכים זמינים</div>';
   } else {
-    // Add "Select All" option
+    // Add search input
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'filter-search-container';
+    searchContainer.innerHTML = `
+      <input type="text" class="filter-search-input" placeholder="חיפוש..." autocomplete="off">
+    `;
+    dropdown.appendChild(searchContainer);
+
+    // Add Select All and Clear All options in a row
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'filter-actions-row';
+
     const allChecked = !columnFilters[column] || columnFilters[column].length === 0;
-    dropdown.innerHTML = `
+    const noneChecked = columnFilters[column] && columnFilters[column].length === 0;
+
+    actionsRow.innerHTML = `
       <div class="filter-option all-option" data-value="all">
         <input type="checkbox" ${allChecked ? 'checked' : ''} id="filter-all-${column}">
-        <label for="filter-all-${column}">(בחר הכל)</label>
+        <label for="filter-all-${column}">בחר הכל</label>
+      </div>
+      <div class="filter-option clear-all-option" data-value="none">
+        <input type="checkbox" ${noneChecked ? 'checked' : ''} id="filter-none-${column}">
+        <label for="filter-none-${column}">נקה הכל</label>
       </div>
     `;
+    dropdown.appendChild(actionsRow);
+
+    // Create options container
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'filter-options-container';
 
     // Add individual options
     uniqueValues.forEach(value => {
@@ -3878,12 +3952,15 @@ function toggleFilterDropdown(column, icon) {
 
       const option = document.createElement('div');
       option.className = 'filter-option';
+      option.setAttribute('data-filter-value', value.toLowerCase());
       option.innerHTML = `
         <input type="checkbox" ${isChecked ? 'checked' : ''} id="${optionId}" data-value="${value}">
         <label for="${optionId}">${value}</label>
       `;
-      dropdown.appendChild(option);
+      optionsContainer.appendChild(option);
     });
+
+    dropdown.appendChild(optionsContainer);
 
     // Add clear filters button
     if (columnFilters[column] && columnFilters[column].length > 0) {
@@ -3898,6 +3975,25 @@ function toggleFilterDropdown(column, icon) {
       };
       dropdown.appendChild(clearBtn);
     }
+
+    // Handle search input
+    const searchInput = searchContainer.querySelector('.filter-search-input');
+    searchInput.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const options = optionsContainer.querySelectorAll('.filter-option');
+
+      options.forEach(option => {
+        const filterValue = option.getAttribute('data-filter-value');
+        if (filterValue && filterValue.includes(searchTerm)) {
+          option.classList.remove('hidden');
+        } else {
+          option.classList.add('hidden');
+        }
+      });
+    });
+
+    // Auto-focus search input
+    setTimeout(() => searchInput.focus(), 100);
 
     // Handle checkbox changes
     dropdown.addEventListener('change', function(e) {
@@ -3918,11 +4014,21 @@ function toggleFilterDropdown(column, icon) {
 // Handle filter checkbox changes
 function handleFilterChange(column, dropdown) {
   const allCheckbox = dropdown.querySelector('[data-value="all"]');
-  const valueCheckboxes = dropdown.querySelectorAll('input[type="checkbox"]:not([data-value="all"])');
+  const noneCheckbox = dropdown.querySelector('[data-value="none"]');
+  const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
 
+  // Handle "Select All" click
   if (allCheckbox && allCheckbox.checked) {
     allCheckbox.checked = false;
+    if (noneCheckbox) noneCheckbox.checked = false;
     valueCheckboxes.forEach(cb => cb.checked = true);
+  }
+
+  // Handle "Clear All" click
+  if (noneCheckbox && noneCheckbox.checked) {
+    noneCheckbox.checked = false;
+    if (allCheckbox) allCheckbox.checked = false;
+    valueCheckboxes.forEach(cb => cb.checked = false);
   }
 
   const selectedValues = Array.from(valueCheckboxes)
