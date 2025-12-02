@@ -1962,8 +1962,7 @@ document.addEventListener('keydown', function(e) {
     let timeSlider = null;
     let currentTimeExtent = null;
     let highlightSelect = null;
-    let forestHighlight = null; // Add this line
-
+    let forestHighlight = null; 
     let forestLayerManuallyToggled = false;
     let lastExtentJSON = null;
     let photoPointsLayer = null;
@@ -2654,7 +2653,6 @@ function loadPhotoPoints() {
     "esri/popup/content/CustomContent"
   ], function (FeatureLayer, AttachmentsContent, CustomContent) {
     try {
-      // Remove old layer if it exists
       if (photoPointsLayer) {
         map.remove(photoPointsLayer);
         photoPointsLayer.destroy();
@@ -2914,7 +2912,6 @@ function loadPhotoPoints() {
                       </style>
                     `;
                     
-                    // Add navigation functionality if there are multiple images
                     if (attachments.length > 1) {
                       setTimeout(() => {
                         window['currentIndex_' + graphic.attributes[graphic.layer.objectIdField]] = 0;
@@ -3007,7 +3004,7 @@ view.when(() => {
     // ##################################################################################################################################
 
 
-let layoutState = 0; // 0 = split (2/3 map, 1/3 table), 1 = map only, 2 = table only
+let layoutState = 0;
 
 window.setLayout = function (state) {
   layoutState = state;
@@ -3054,7 +3051,6 @@ function populateYearSelects(minYear, maxYear) {
   const toSel   = document.getElementById('yearTo');
   if (!fromSel || !toSel) return;
 
-  // ניקה אפשרויות קודמות (מלבד ברירת מחדל)
   while (fromSel.options.length > 1) fromSel.remove(1);
   while (toSel.options.length   > 1) toSel.remove(1);
 
@@ -3080,7 +3076,6 @@ function getYearRangeFromSelects() {
   const toVal   = toSel.value   ? Number(toSel.value)   : (maxYearGlobal ?? null);
 
   if (fromVal == null || toVal == null) return null;
-  // הבטח סדר נכון
   const startY = Math.min(fromVal, toVal);
   const endY   = Math.max(fromVal, toVal);
   return { startY, endY };
@@ -3090,7 +3085,6 @@ onYearSelectChange = function() {
   const yr = getYearRangeFromSelects();
   if (!yr) return;
 
-  // Update the TimeSlider
   if (timeSlider) {
     const start = new Date(yr.startY, 0, 1);
     const end = new Date(yr.endY, 11, 31);
@@ -3100,7 +3094,6 @@ onYearSelectChange = function() {
     if (datesEl) datesEl.textContent = `${yr.startY} - ${yr.endY}`;
   }
 
-  // Apply filters with skipRebuild flag
   applyFilters({ skipExtent: false, skipRebuild: true });
 }
 
@@ -3126,14 +3119,11 @@ async function resolveFieldsAfterLoad() {
     fhp:    firstExisting(featureLayer, ["F_H_P", "FHP", "f_h_p", "fhp"])
   };
   
-  // Load forest layer and get its fields
   await featureForest.load();
   
-  // Now add forest layer fields after it's loaded
   FIELD.forestYear = firstExisting(featureForest, ["year","Year","YEAR"]);
   FIELD.forestFHP = firstExisting(featureForest, ["F_H_P", "FHP", "f_h_p", "fhp"]);
   
-  // Debug: Log the detected fields
   console.log("Detected F_H_P fields:", {
     events: FIELD.fhp,
     forest: FIELD.forestFHP
@@ -3146,16 +3136,13 @@ function buildForestWhere() {
   const parts = [];
   const filters = getActiveFilters();
   
-  // CRITICAL: Filter forest by year field
   const forestYearField = firstExisting(featureForest, ["year", "Year", "YEAR"]);
   
   if (forestYearField) {
-    // Check for year range from selects first
     const yr = getYearRangeFromSelects();
     if (yr) {
       parts.push(`${forestYearField} >= ${yr.startY} AND ${forestYearField} <= ${yr.endY}`);
     } 
-    // Otherwise use TimeSlider extent
     else if (currentTimeExtent) {
       const startYear = currentTimeExtent.start.getFullYear();
       const endYear = currentTimeExtent.end.getFullYear();
@@ -3163,7 +3150,6 @@ function buildForestWhere() {
     }
   }
   
-  // Add other filters matching the events layer
   const forestFields = {
     DistrictName: firstExisting(featureForest, ["DistrictName", "DISTRICT_NAME"]),
     region: firstExisting(featureForest, ["RegionName", "REGION"]),
@@ -3173,47 +3159,39 @@ function buildForestWhere() {
     stand: firstExisting(featureForest, ["STAND_NO", "StandNo"])
   };
   
-  // השתמש בפונקציה החדשה
   [
     formatSqlFilter(featureForest, forestFields.DistrictName, filters.DistrictName),
     formatSqlFilter(featureForest, forestFields.region, filters.region),
     formatSqlFilter(featureForest, forestFields.gush, filters.gush),
     formatSqlFilter(featureForest, forestFields.forest, filters.forest),
-    formatSqlFilter(featureForest, forestFields.parcel, filters.parcel), // <-- מתוקן
-    formatSqlFilter(featureForest, forestFields.stand, filters.stand)    // <-- מתוקן
+    formatSqlFilter(featureForest, forestFields.parcel, filters.parcel), 
+    formatSqlFilter(featureForest, forestFields.stand, filters.stand)    
   ].forEach(part => {
     if (part) parts.push(part);
   });
   
-  // Return the WHERE clause
   return parts.length > 0 ? parts.join(" AND ") : "1=1";
 }
 
 
 const FILTER_ORDER = [
-  { id: "DistrictName", fieldKey: "DistrictName" }, // מרחב
-  { id: "region",       fieldKey: "region"       }, // אזור
-  { id: "gush",         fieldKey: "gush"         }, // גוש
-  { id: "forest",       fieldKey: "forest"       }, // יער
-  { id: "parcel",       fieldKey: "parcel"       }, // חלקה
-  { id: "stand",        fieldKey: "stand"        }  // עומד
+  { id: "DistrictName", fieldKey: "DistrictName" }, 
+  { id: "region",       fieldKey: "region"       }, 
+  { id: "gush",         fieldKey: "gush"         }, 
+  { id: "forest",       fieldKey: "forest"       }, 
+  { id: "parcel",       fieldKey: "parcel"       }, 
+  { id: "stand",        fieldKey: "stand"        }  
 ];
-
-// Build a WHERE that includes: active event-type, year range/time slider,
-// and only the filters ABOVE a given index (so each dropdown reflects higher choices).
 
 
 function buildWhereForCascading(uptoIndexExclusive) {
   const parts = ["1=1"];
 
-  // Event type card
   if (activeEventType?.field && activeEventType?.value) {
-    // השתמש בפונקציה החדשה
     const part = formatSqlFilter(featureLayer, activeEventType.field, activeEventType.value);
     if (part) parts.push(part);
   }
 
-  // Year range / time slider
   if (FIELD.year) {
     const yr = getYearRangeFromSelects();
     if (yr) {
@@ -3231,14 +3209,12 @@ function buildWhereForCascading(uptoIndexExclusive) {
     const fName = FIELD[fieldKey];
     const val   = filters[id];
     
-    // השתמש בפונקציה החדשה
     const part = formatSqlFilter(featureLayer, fName, val);
     if (part) parts.push(part);
   }
   return parts.join(" AND ");
 }
 
-// Query distinct values for one field, under a given WHERE
 async function queryDistinctValues(fieldName, where) {
   if (!fieldName) return [];
   const q = await featureLayer.queryFeatures({
@@ -3305,7 +3281,6 @@ async function populateFiltersServer() {
 const _origUpdateEventTypeCountsServer = updateEventTypeCountsServer;
 updateEventTypeCountsServer = async function(baseWhere) {
   await _origUpdateEventTypeCountsServer(baseWhere);
-  // await rebuildAllFilters();
 };
 
 const _origOnYearSelectChange = onYearSelectChange;
@@ -3319,7 +3294,6 @@ initializeTimeSlider = async function() {
   await _origInitializeTimeSlider();
   if (timeSlider) {
     timeSlider.watch("timeExtent", debounce(async () => {
-      // await rebuildAllFilters();
     }, 250));
   }
 };
@@ -3336,24 +3310,21 @@ function buildWhere() {
   const parts = ["1=1"];
 
   if (activeEventType?.field && activeEventType?.value) {
-    // השתמש בפונקציה החדשה, והעבר את השכבה
     const part = formatSqlFilter(featureLayer, activeEventType.field, activeEventType.value);
     if (part) parts.push(part);
   }
 
-  // דרך נקייה להוסיף את כל הפילטרים
   [
     formatSqlFilter(featureLayer, FIELD.DistrictName, f.DistrictName),
     formatSqlFilter(featureLayer, FIELD.region, f.region),
     formatSqlFilter(featureLayer, FIELD.forest, f.forest),
     formatSqlFilter(featureLayer, FIELD.gush, f.gush),
-    formatSqlFilter(featureLayer, FIELD.parcel, f.parcel), // <-- מתוקן
-    formatSqlFilter(featureLayer, FIELD.stand, f.stand)    // <-- מתוקן
+    formatSqlFilter(featureLayer, FIELD.parcel, f.parcel), 
+    formatSqlFilter(featureLayer, FIELD.stand, f.stand)    
   ].forEach(part => {
-    if (part) parts.push(part); // הוסף רק אם הפילטר תקין
+    if (part) parts.push(part); 
   });
 
-  // לוגיקת השנים נשארת כרגיל
   if (FIELD.year) {
     const yr = getYearRangeFromSelects();
     if (yr) {
@@ -3370,7 +3341,6 @@ function buildWhere() {
 
 
 async function refreshForestVisibility(where) {
-  // const baseForestExpr = "UPDATE_CODE_NAME <> 'נמחק' OR UPDATE_CODE_NAME IS NULL";
   const baseForestExpr = "1=1";
   const chk = document.getElementById('forestLayerToggle');
 
@@ -3392,10 +3362,8 @@ async function applyFilters(opts = {}) {
   const { skipExtent = false, skipRebuild = false } = opts;
   const where = buildWhere();
   
-  // Update events layer
   featureLayer.definitionExpression = where;
   
-  // Update forest layer with ALL filters
   const forestWhere = buildForestWhere();
   featureForest.definitionExpression = forestWhere;
 
@@ -3426,16 +3394,10 @@ const outFields = ["OBJECTID", FIELD.DistrictName, FIELD.region, FIELD.forest, F
 
   await updateEventTypeCountsServer(where);
   
-  // Only rebuild cascading filters if not skipped
-  // if (!skipRebuild) {
-  //   await rebuildAllFilters();
-  // }
 }
 
-// Track current view level: 'main' (10 cards), 'sub' (5 cards), or 'dynamic' (from feature layer)
 let currentEventViewLevel = 'main';
 
-// Initialize main categories (10 cards)
 async function initializeMainCategories() {
   const container = document.getElementById('eventTypesContainer');
   if (!container) return;
@@ -3461,10 +3423,8 @@ async function initializeMainCategories() {
     card.innerHTML = `<div class="event-type-name">${categoryName}</div>`;
     card.onclick = () => {
       if (categoryName === 'אירועי פרצלציה') {
-        // Navigate to dynamic event types
         initializeDynamicEventTypes();
       } else {
-        // Show "in progress" message
         alert('בתהליך פיתוח');
       }
     };
@@ -3472,7 +3432,6 @@ async function initializeMainCategories() {
   });
 }
 
-// Initialize sub categories (5 cards - shown after back button)
 async function initializeSubCategories() {
   const container = document.getElementById('eventTypesContainer');
   if (!container) return;
@@ -3498,10 +3457,8 @@ async function initializeSubCategories() {
     card.innerHTML = `<div class="event-type-name">${categoryName}</div>`;
     card.onclick = () => {
       if (categoryName === 'אירועי פרצלציה') {
-        // Navigate to dynamic event types
         initializeDynamicEventTypes();
       } else {
-        // Show "in progress" message
         alert('בתהליך פיתוח');
       }
     };
@@ -3509,7 +3466,6 @@ async function initializeSubCategories() {
   });
 }
 
-// Initialize dynamic event types (from feature layer)
 async function initializeDynamicEventTypes() {
   if (!FIELD.type) {
     const ctr = document.getElementById('eventTypesContainer');
@@ -3529,14 +3485,12 @@ async function initializeDynamicEventTypes() {
   container.innerHTML = '';
   currentEventViewLevel = 'dynamic';
 
-  // Add back button
   const backButton = document.createElement('button');
   backButton.className = 'event-type-card';
   backButton.style.background = '#6c757d';
   backButton.style.minWidth = '100px';
   backButton.innerHTML = `<div class="event-type-name">← חזרה</div>`;
   backButton.onclick = () => {
-    // Clear active event type filter when going back
     activeEventType = null;
     const t = document.getElementById('infoPanelTitle'); if (t) t.textContent = 'כל הפעילויות';
     initializeSubCategories();
@@ -3587,13 +3541,11 @@ async function initializeDynamicEventTypes() {
   allCard.classList.add('active');
 }
 
-// Main initialization function - starts with main categories
 async function initializeEventTypes() {
   await initializeMainCategories();
 }
 
 async function updateEventTypeCountsServer(baseWhere) {
-  // Only update counts when in dynamic view
   if (currentEventViewLevel !== 'dynamic') return;
   if (!FIELD.type) return;
 
@@ -3625,7 +3577,6 @@ async function updateEventTypeCountsServer(baseWhere) {
 
   const cards = document.querySelectorAll('.event-type-card');
 
-  // Skip the back button (first card in dynamic view)
   if (cards[1]) {
     const allCountEl = cards[1].querySelector('.event-count');
     if (allCountEl) allCountEl.textContent = String(total);
@@ -3664,7 +3615,6 @@ async function initializeTimeSlider() {
     maxYearGlobal = a.maxYear ?? null;
 
     if (minYearGlobal && maxYearGlobal) {
-      // מלא את הרשימות העליונות
       populateYearSelects(minYearGlobal, maxYearGlobal);
 
       minDate = new Date(minYearGlobal, 0, 1);
@@ -3720,17 +3670,14 @@ timeSlider.watch("timeExtent", (value) => {
     yTo.value = (maxYearGlobal != null && ey === Number(maxYearGlobal)) ? "" : String(ey);
   }
 
-  // Update BOTH layers with the time filter
   const eventsWhere = buildWhere();
   const forestWhere = buildForestWhere();
   
   featureLayer.definitionExpression = eventsWhere;
   featureForest.definitionExpression = forestWhere;
   
-  // Log for debugging
   console.log("Forest layer WHERE:", forestWhere);
   
-  // Continue with other updates
   applyFilters({ skipExtent: true, skipRebuild: true });
 });
 };
@@ -3751,15 +3698,13 @@ timeSlider.watch("timeExtent", (value) => {
 
 
 
-// Global variables for table sorting and filtering
 let currentTableFeatures = [];
 let currentTableFIELD = null;
 let currentSortColumn = null;
 let currentSortDirection = null;
-let columnFilters = {}; // Store selected filters for each column
+let columnFilters = {}; 
 let activeDropdown = null;
 
-// Initialize table header event listeners for sorting
 function initializeTableSorting() {
   const headers = document.querySelectorAll('.sortable-header');
   headers.forEach(header => {
@@ -3770,13 +3715,10 @@ function initializeTableSorting() {
   });
 }
 
-// Sort table by column
 function sortTable(column) {
   if (!currentTableFeatures.length || !currentTableFIELD) return;
 
-  // Determine sort direction
   if (currentSortColumn === column) {
-    // Toggle between asc, desc, and no sort
     if (currentSortDirection === 'asc') {
       currentSortDirection = 'desc';
     } else if (currentSortDirection === 'desc') {
@@ -3790,7 +3732,6 @@ function sortTable(column) {
     currentSortDirection = 'asc';
   }
 
-  // Update header classes
   const headers = document.querySelectorAll('.sortable-header');
   headers.forEach(h => {
     h.classList.remove('sorted-asc', 'sorted-desc');
@@ -3799,7 +3740,6 @@ function sortTable(column) {
     }
   });
 
-  // Sort features
   let sortedFeatures = [...currentTableFeatures];
 
   if (currentSortColumn && currentSortDirection) {
@@ -3815,12 +3755,10 @@ function sortTable(column) {
       } else if (column === 'year') {
         aVal = fieldName ? a.attributes[fieldName] : null;
         bVal = fieldName ? b.attributes[fieldName] : null;
-        // Handle dates
         if (aVal instanceof Date && bVal instanceof Date) {
           aVal = aVal.getTime();
           bVal = bVal.getTime();
         } else if (typeof aVal === 'number' && typeof bVal === 'number') {
-          // Already numbers (timestamps)
         } else {
           aVal = aVal ? String(aVal) : '';
           bVal = bVal ? String(bVal) : '';
@@ -3832,29 +3770,25 @@ function sortTable(column) {
         bVal = String(bVal);
       }
 
-      // Compare values
       if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
       if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }
 
-  // Apply filters and re-render
   applyFiltersAndRender(sortedFeatures);
 }
 
-// Initialize filter icon listeners
 function initializeTableFiltering() {
   const filterIcons = document.querySelectorAll('.filter-icon');
   filterIcons.forEach(icon => {
     icon.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent triggering header click
+      e.stopPropagation(); 
       const column = this.getAttribute('data-column');
       toggleFilterDropdown(column, this);
     });
   });
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
     if (activeDropdown && !e.target.closest('.filter-dropdown') && !e.target.closest('.filter-icon')) {
       closeFilterDropdown();
@@ -3862,7 +3796,6 @@ function initializeTableFiltering() {
   });
 }
 
-// Get unique values for a column
 function getUniqueColumnValues(column, features, FIELD) {
   if (!features.length || !FIELD) return [];
 
@@ -3890,31 +3823,25 @@ function getUniqueColumnValues(column, features, FIELD) {
   return Array.from(uniqueValues).sort();
 }
 
-// Toggle filter dropdown
 function toggleFilterDropdown(column, icon) {
-  // Close existing dropdown
   if (activeDropdown) {
     closeFilterDropdown();
   }
 
-  // If clicking the same icon, just close
   if (activeDropdown === column) {
     activeDropdown = null;
     return;
   }
 
-  // Create dropdown
   const dropdown = document.createElement('div');
   dropdown.className = 'filter-dropdown show';
   dropdown.id = 'active-filter-dropdown';
 
-  // Get unique values
   const uniqueValues = getUniqueColumnValues(column, currentTableFeatures, currentTableFIELD);
 
   if (!uniqueValues.length) {
     dropdown.innerHTML = '<div class="filter-option">אין ערכים זמינים</div>';
   } else {
-    // Add search input
     const searchContainer = document.createElement('div');
     searchContainer.className = 'filter-search-container';
     searchContainer.innerHTML = `
@@ -3922,7 +3849,6 @@ function toggleFilterDropdown(column, icon) {
     `;
     dropdown.appendChild(searchContainer);
 
-    // Add Select All and Clear All options in a row
     const actionsRow = document.createElement('div');
     actionsRow.className = 'filter-actions-row';
 
@@ -3936,7 +3862,6 @@ function toggleFilterDropdown(column, icon) {
     `;
     dropdown.appendChild(actionsRow);
 
-    // Add click handlers for Select All and Clear All
     const selectAllBtn = actionsRow.querySelector('[data-action="select-all"]');
     const clearAllBtn = actionsRow.querySelector('[data-action="clear-all"]');
 
@@ -3954,11 +3879,9 @@ function toggleFilterDropdown(column, icon) {
       handleFilterChange(column, dropdown);
     });
 
-    // Create options container
     const optionsContainer = document.createElement('div');
     optionsContainer.className = 'filter-options-container';
 
-    // Add individual options
     uniqueValues.forEach(value => {
       const isChecked = !columnFilters[column] || columnFilters[column].length === 0 || columnFilters[column].includes(value);
       const optionId = `filter-${column}-${value.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -3975,7 +3898,6 @@ function toggleFilterDropdown(column, icon) {
 
     dropdown.appendChild(optionsContainer);
 
-    // Add clear filters button
     if (columnFilters[column] && columnFilters[column].length > 0) {
       const clearBtn = document.createElement('div');
       clearBtn.className = 'filter-clear-btn';
@@ -3989,7 +3911,6 @@ function toggleFilterDropdown(column, icon) {
       dropdown.appendChild(clearBtn);
     }
 
-    // Handle search input
     const searchInput = searchContainer.querySelector('.filter-search-input');
     searchInput.addEventListener('input', function(e) {
       const searchTerm = e.target.value.toLowerCase();
@@ -4005,10 +3926,8 @@ function toggleFilterDropdown(column, icon) {
       });
     });
 
-    // Auto-focus search input
     setTimeout(() => searchInput.focus(), 100);
 
-    // Handle checkbox changes
     dropdown.addEventListener('change', function(e) {
       if (e.target.type === 'checkbox') {
         handleFilterChange(column, dropdown);
@@ -4016,7 +3935,6 @@ function toggleFilterDropdown(column, icon) {
     });
   }
 
-  // Position dropdown relative to the header
   const th = icon.closest('th');
   th.style.position = 'relative';
   th.appendChild(dropdown);
@@ -4024,7 +3942,6 @@ function toggleFilterDropdown(column, icon) {
   activeDropdown = column;
 }
 
-// Handle filter checkbox changes
 function handleFilterChange(column, dropdown) {
   const valueCheckboxes = dropdown.querySelectorAll('.filter-options-container input[type="checkbox"]');
 
@@ -4123,7 +4040,6 @@ function renderInfoTable(features, FIELD) {
     return;
   }
 
-  // popup
   let popup = document.getElementById('yearSearchPopup');
   if (!popup) {
     popup = document.createElement('div');
@@ -4211,7 +4127,6 @@ function renderInfoTable(features, FIELD) {
     return lv;
   };
 
-  // important: wait until layerView is ready before highlight
   const waitForLayerViewReady = async (layerView, maxWait = 5000) => {
     const start = Date.now();
     while (layerView.updating && (Date.now() - start) < maxWait) {
@@ -4255,13 +4170,11 @@ function renderInfoTable(features, FIELD) {
       const allRows = tbody.querySelectorAll('.clickable-row');
       const alreadySelected = tr.dataset.selected === 'true';
 
-      // deselect all rows (including this one)
       allRows.forEach(row => {
         row.dataset.selected = 'false';
         row.classList.remove('selected-row');
       });
 
-      // if row was already selected -> this click is "unselect"
       if (alreadySelected) {
         if (window.forestHighlight) {
           window.forestHighlight.remove();
@@ -4269,28 +4182,24 @@ function renderInfoTable(features, FIELD) {
         }
         popup.style.display = 'none';
         popup.classList.remove('fade-out-animation');
-        return; // nothing more to do
+        return; 
       }
 
-      // from here: NEW selection
-      // bump token only for a new search
+
       window.currentForestSearchToken += 1;
       const myToken = window.currentForestSearchToken;
 
       const stillMyTurn = () =>
         myToken === window.currentForestSearchToken;
 
-      // mark this row as selected
       tr.dataset.selected = 'true';
       tr.classList.add('selected-row');
 
-      // clear previous highlight (from other row)
       if (window.forestHighlight) {
         window.forestHighlight.remove();
         window.forestHighlight = null;
       }
 
-      // zoom to stand point - wait for zoom to complete before checking polygon
       await zoomToFeatureById(a.OBJECTID);
 
       if (!(FIELD.fhp && FIELD.year && FIELD.forestFHP && FIELD.forestYear)) {
@@ -4307,7 +4216,6 @@ function renderInfoTable(features, FIELD) {
 
       const cacheKey = `${String(fhpValue).trim()}__${originalYear}`;
 
-      // popup base state
       popup.style.display = 'block';
       popup.classList.remove('fade-out-animation');
       popup.style.background = 'rgba(17, 24, 39, 0.9)';
@@ -4316,7 +4224,6 @@ function renderInfoTable(features, FIELD) {
 
       const forestLayerView = await getForestLayerView();
 
-      // 1) try cache first
       const cachedObjectIds = window.forestSearchCache[cacheKey];
       if (Array.isArray(cachedObjectIds) && cachedObjectIds.length > 0) {
         try {
@@ -4403,7 +4310,6 @@ function renderInfoTable(features, FIELD) {
 
               found = true;
 
-              // cache for the exact year we found
               const exactKey = `${String(fhpValue).trim()}__${currentYear}`;
               window.forestSearchCache[exactKey] = objectIds;
 
@@ -4434,21 +4340,6 @@ function renderInfoTable(features, FIELD) {
     tbody.appendChild(tr);
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4535,7 +4426,6 @@ async function zoomToFeatureById(objectId) {
       if (el) el.addEventListener('change', () => { forestLayerManuallyToggled = false; debouncedApply(); });
     });
 
-    // Add event listeners for year selects to update time slider
     const yearFromEl = document.getElementById('yearFrom');
     const yearToEl = document.getElementById('yearTo');
 
@@ -4588,6 +4478,7 @@ async function zoomToFeatureById(objectId) {
 
   });
 </script>
+
 
 
 
